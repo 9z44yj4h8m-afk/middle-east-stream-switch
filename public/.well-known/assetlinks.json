@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "net.almoghani.smarter",
+        "sha256_cert_fingerprints": ["FF:6D:AC:CF:8F:DA:53:42:06:30:3C:CF:7A:F3:B5:D3:05:65:F6:B2:10:24:1B:67:06:B1:8B:6E:26:E1:AC:FF"]
+      }
+    }]
