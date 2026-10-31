@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793427908486,
+      "tag": "0000_grant_owner_admin",
+      "breakpoints": true
+    }
+  ]
 }
