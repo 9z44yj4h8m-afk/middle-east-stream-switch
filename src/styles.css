@@ -1211,3 +1211,15 @@ body:has(.voice-studio-page) { overflow: hidden; }
 .subreq-submit:hover { filter:brightness(1.06); }
 .subreq-submit svg { width:24px; height:24px; }
 .subreq-error { margin-top:10px; padding:8px 10px; border-radius:10px; border:1px solid #f87171; background:rgba(127,29,29,.4); color:#fecaca; font-size:13px; font-weight:700; text-align:center; }
+
+@theme inline {
+  --color-console-bg: oklch(0.17 0.01 260);
+  --color-console-card: oklch(0.23 0.015 260);
+  --color-console-line: oklch(0.32 0.015 260);
+  --color-console-red: oklch(0.6 0.22 25);
+  --color-console-green: oklch(0.75 0.19 150);
+  --color-console-blue: oklch(0.5 0.2 262);
+  --color-console-teal: oklch(0.52 0.09 220);
+  --color-console-violet: oklch(0.55 0.24 295);
+  --color-console-slate: oklch(0.45 0.03 260);
+}
