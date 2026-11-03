@@ -29,7 +29,7 @@ export function LiveConsole() {
   const go = (step: number) => {
     const next = (index + step + list.length) % list.length;
     setIndex(next);
-    if (playing) setPlaying(list[next]);
+    if (playing) setPlaying(list[next] ?? null);
   };
 
   return (
