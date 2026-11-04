@@ -98,7 +98,7 @@ export function youtubeIdFrom(url: string): string | null {
 }
 
 export function mergeChannels(config: SiteConfig | undefined): Channel[] {
-  if (!config) return baseChannels;
+  if (!config) return orderChannels(dedupeChannels(baseChannels));
   const ov = new Map(config.overrides.map((o) => [o.channel_id, o]));
   const base = baseChannels
     .filter((c) => !ov.get(c.id)?.hidden)
