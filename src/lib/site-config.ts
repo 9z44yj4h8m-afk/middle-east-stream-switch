@@ -121,7 +121,7 @@ export function mergeChannels(config: SiteConfig | undefined): Channel[] {
         description: c.description || "بث مباشر",
       };
     });
-  return orderChannels([...base, ...extra]);
+  return orderChannels(dedupeChannels([...base, ...extra]));
 }
 
 /** Full catalog with admin changes applied; falls back to the built-in list while loading. */

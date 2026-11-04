@@ -12,7 +12,7 @@ import { checkStreamUrl } from "@/lib/admin.functions";
 import { fetchOfficialPlaylist } from "@/lib/channel-playlist.functions";
 import { publicChannelUrl, readChannelPlaylist, type PlaylistChannel } from "@/lib/channel-playlist";
 import { channelPanelStats } from "@/lib/channel-panel-stats";
-import { orderChannels } from "@/lib/channel-order";
+import { dedupeChannels, orderChannels } from "@/lib/channel-order";
 
 const input = "h-11 w-full min-w-0 rounded-lg border border-input bg-secondary px-3 text-sm text-foreground outline-none focus:border-primary";
 type EditChannel = PlaylistChannel & { id?: string; custom?: boolean };
@@ -47,12 +47,12 @@ export function EasyChannelPanel() {
     return value && Array.isArray(value.ids) && Array.isArray(value.names) && typeof value.at === "string" ? { ids: value.ids.filter((s): s is string => typeof s === "string"), names: value.names.filter((s): s is string => typeof s === "string"), at: value.at } : null;
   } });
   useEffect(() => { if (!notice) return; const timer = window.setTimeout(() => setNotice(""), 6000); return () => window.clearTimeout(timer); }, [notice]);
-  const stats = channelPanelStats(baseChannels.length, (data?.customChannels ?? []).map((c) => c.id), imports.data?.ids ?? [], pending.length);
+  const stats = channelPanelStats(dedupeChannels(baseChannels).length, (data?.customChannels ?? []).map((c) => c.id), imports.data?.ids ?? [], pending.length);
   const overrides = new Map((data?.overrides ?? []).map((o) => [o.channel_id, o]));
-  const catalog = useMemo(() => orderChannels([
+  const catalog = useMemo(() => orderChannels(dedupeChannels([
     ...baseChannels.map((c) => ({ id: c.id, name: c.name, category: c.category, logo: c.thumbnail, url: c.streamUrl ?? (c.youtubeId ? `https://www.youtube.com/watch?v=${c.youtubeId}` : ""), custom: false })),
     ...(data?.customChannels ?? []).map((c) => ({ id: c.id, name: c.name, category: c.category as EditChannel["category"], logo: c.logo, url: c.stream_url, custom: true })),
-  ]), [data]);
+  ])), [data]);
   const all = catalog.map((c) => ({ ...c, name: overrides.get(c.id)?.name || c.name, category: (overrides.get(c.id)?.category || c.category) as EditChannel["category"], hidden: overrides.get(c.id)?.hidden ?? false }));
   const filtered = all.filter((c) => c.name.toLowerCase().includes(query.toLowerCase()) && (category === "الكل" || c.category === category) && (filter === "الكل" || (filter === "المخفية" ? c.hidden : c.custom)));
   const shown = filtered.slice((page - 1) * 24, page * 24);
