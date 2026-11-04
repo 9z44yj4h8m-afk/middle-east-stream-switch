@@ -71,6 +71,7 @@ function AdminPage() {
       <header className="border-b border-border px-4 py-4 sm:px-6"><Link to="/" className="flex items-center gap-2 font-bold"><ArrowRight className="h-5 w-5" />ALMOGHANI LIVE</Link></header>
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <h1 className="font-display text-3xl font-black">لوحة التحكم</h1>
+        <Button asChild variant="outline" className="mt-4 ms-2"><Link to="/control">لوحة القنوات السهلة</Link></Button>
         <Button asChild className="mt-4"><Link to="/admin-chat">لوحة الشات (المستخدمين والأصوات)</Link></Button>
         <nav aria-label="أقسام لوحة التحكم" className="my-6 flex flex-wrap gap-2">
           {ADMIN_SECTIONS.map(({ id, label }) => <Button key={id} asChild size="sm" variant="outline"><a href={`#admin-${id}`}>{label}</a></Button>)}

@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Architecture
+- Keep /control as a standalone owner channel panel reusing password login, has_role, admin-RLS tables and shared site-config invalidation; parse M3U with iptv-playlist-parser, fetch only allow-listed official playlists, and never import credential-bearing private IPTV into public catalogs.
 - Home and /live share LiveConsole's reference layout and the shared LivePlayer; keep the prior category homepage at /portal so restyling never removes content, and hydrate favorite storage after mount.
 - Resolve voice profile IDs to supported provider IDs centrally; share preview/chat delivery prompts for compatibility.
 - Keep /admin-chat open and /admin-voices viewport-height, ending with save; extra tools stay in a dialog, owner guards and writes protected. Crop header/avatar artwork separately so controls remain interactive.
