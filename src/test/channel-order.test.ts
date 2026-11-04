@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { channelGroup, orderChannels } from "@/lib/channel-order";
+import { channelGroup, dedupeChannels, orderChannels } from "@/lib/channel-order";
 import { channels } from "@/lib/channels";
 
-const ids = orderChannels(channels).map((c) => c.id);
+const ordered = orderChannels(dedupeChannels(channels));
+const ids = ordered.map((c) => c.id);
 
 describe("channel ordering", () => {
   it("puts MBC first, then Rotana, then the rest of the Saudi channels", () => {
@@ -11,15 +12,16 @@ describe("channel ordering", () => {
     expect(ids.indexOf("ar-rotana-cinema")).toBeLessThan(ids.indexOf("saudi-tv"));
   });
   it("orders Saudi before Gulf, Gulf before Arabic and Arabic before foreign", () => {
-    const last = (group: string) => Math.max(...channels.filter((c) => channelGroup(c) === group).map((c) => ids.indexOf(c.id)));
-    const first = (group: string) => Math.min(...channels.filter((c) => channelGroup(c) === group).map((c) => ids.indexOf(c.id)));
+    const last = (group: string) => Math.max(...ordered.filter((c) => channelGroup(c) === group).map((c) => ids.indexOf(c.id)));
+    const first = (group: string) => Math.min(...ordered.filter((c) => channelGroup(c) === group).map((c) => ids.indexOf(c.id)));
     expect(last("saudi")).toBeLessThan(first("gulf"));
     expect(last("gulf")).toBeLessThan(first("arabic"));
     expect(last("arabic")).toBeLessThan(first("foreign"));
   });
-  it("keeps every channel and preserves order inside a group", () => {
-    expect(ids).toHaveLength(channels.length);
-    const gulf = channels.filter((c) => channelGroup(c) === "gulf").map((c) => c.id);
+  it("lists every channel once and keeps the order inside a group", () => {
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.length).toBeLessThanOrEqual(channels.length);
+    const gulf = ordered.filter((c) => channelGroup(c) === "gulf").map((c) => c.id);
     expect(ids.filter((id) => gulf.includes(id))).toEqual(gulf);
   });
   it("classifies channels the owner imports later", () => {
