@@ -17,6 +17,7 @@ const categories = [
   { label: "عامة", value: "عامة", icon: Tv },
 ];
 const destinations = [
+  { to: "/iptv", label: "تطبيق IPTV" },
   { to: "/sections", label: "الأقسام" }, { to: "/movies", label: "الأفلام" },
   { to: "/bedouin-drama", label: "البدوية دراما" }, { to: "/vip", label: "سمارتر" },
   { to: "/auth", label: "دخول الأعضاء" }, { to: "/chat", label: "الدردشة" },
