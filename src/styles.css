@@ -1265,7 +1265,9 @@ body:has(.voice-studio-page) { overflow: hidden; }
 .live-reference-categories::-webkit-scrollbar { display:none; }
 .live-category { flex-shrink:0; border-radius:999px; height:37px; padding:0 13px; background:transparent; color:var(--primary); border-color:var(--border); font-size:12px; }
 .live-category svg { width:17px; height:17px; }.live-category.active { background:var(--reference-gold-fill); color:var(--primary-foreground); border-color:var(--primary); }
-.live-reference-list { display:grid; gap:5px; margin:0; padding:0; list-style:none; }
+.live-reference-list { display:grid; grid-template-columns:minmax(0,1fr); gap:5px; margin:0; padding:0; list-style:none; }
+.live-reference-list > li { min-width:0; }
+.live-channel-logo-fallback { width:56px; height:40px; display:grid; place-items:center; flex-shrink:0; color:var(--primary); }
 .live-reference-channel { width:100%; height:62px; display:flex; padding:7px 12px; gap:12px; border:1px solid var(--border); border-radius:8px; text-align:right; justify-content:start; background:var(--background); font-weight:400; }
 .live-reference-channel:hover,.live-reference-channel.selected { background:var(--secondary); border-color:var(--primary); color:var(--foreground); }
 .live-reference-channel > img { width:56px; height:40px; object-fit:contain; flex-shrink:0; border-radius:3px; }

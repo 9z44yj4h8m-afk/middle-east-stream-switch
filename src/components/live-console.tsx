@@ -37,7 +37,7 @@ export function LiveConsole() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const playerRef = useRef<HTMLElement>(null);
-  const current = list.find(c => c.id === selected || (!selected && c.id === search.channel)) ?? list.find(c => c.id === "mbc1") ?? list[0];
+  const current = list.find(c => c.id === selected || (!selected && c.id === search.channel)) ?? list.find(c => c.id === "mbc-1") ?? list[0];
   useEffect(() => {
     try { const saved: unknown = JSON.parse(localStorage.getItem("almoghani-live-favorites") ?? "[]"); if (Array.isArray(saved)) setFavorites(saved.filter((v): v is string => typeof v === "string")); } catch { /* optional storage */ }
   }, []);
@@ -67,9 +67,9 @@ export function LiveConsole() {
         <section className="live-reference-catalog" aria-label={view === "favorites" ? "القنوات المفضلة" : "دليل القنوات"}>
           <div className="live-reference-categories" dir="ltr">{categories.map(({ label, value, icon: Icon }) => <Button key={value} variant="outline" className={category === value ? "live-category active" : "live-category"} onClick={() => setCategory(value)} aria-pressed={category === value}><Icon />{label}</Button>)}</div>
           {view === "favorites" && <h2 className="live-reference-label">المفضلة</h2>}
-          <ul className="live-reference-list">{filtered.map(c => <li key={c.id}>
+          <ul className="live-reference-list">{filtered.map((c, rowIndex) => <li key={`${c.id}-${rowIndex}`}>
             <Button variant="ghost" className={`live-reference-channel ${current.id === c.id ? "selected" : ""}`} aria-label={`تشغيل ${c.name}`} aria-pressed={current.id === c.id} onClick={() => { setSelected(c.id); if (window.matchMedia("(max-width: 900px)").matches) playerRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); }}>
-              <img src={c.thumbnail} alt="" loading="lazy" onError={e => { e.currentTarget.style.visibility = "hidden"; }} />
+              {c.thumbnail ? <img src={c.thumbnail} alt="" loading="lazy" onError={e => { e.currentTarget.style.visibility = "hidden"; }} /> : <span className="live-channel-logo-fallback"><Tv /></span>}
               <span className="live-channel-copy"><strong>{c.name}</strong><small>{c.description || c.category}</small></span>
               <span className="live-channel-number">{String(list.findIndex(v => v.id === c.id) + 1).padStart(3, "0")}</span><ChevronLeft />
             </Button>
