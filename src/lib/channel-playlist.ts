@@ -3,6 +3,16 @@ import type { ChannelCategory } from "./channels";
 
 export type PlaylistChannel = { name: string; url: string; logo: string; category: ChannelCategory };
 
+export function officialYoutubeId(value: string): string | null {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.replace(/^www\./, "");
+    if (host !== "youtube.com" && host !== "m.youtube.com" && host !== "youtu.be") return null;
+    const id = host === "youtu.be" ? url.pathname.slice(1) : url.searchParams.get("v") ?? url.pathname.match(/^\/(?:embed|live|shorts)\/([^/]+)/)?.[1];
+    return id && /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null;
+  } catch { return null; }
+}
+
 /** Public catalogs must never receive credential-bearing private IPTV streams. */
 export function publicChannelUrl(value: string): boolean {
   try {

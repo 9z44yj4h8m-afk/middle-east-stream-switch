@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { readChannelPlaylist, publicChannelUrl } from "@/lib/channel-playlist";
+import { readChannelPlaylist, publicChannelUrl, officialYoutubeId } from "@/lib/channel-playlist";
 
 describe("owner channel playlist", () => {
+  it("does not mistake HLS live paths for YouTube videos", () => {
+    expect(officialYoutubeId("https://shd-gcp-live.edgenextcdn.net/live/bitmovin-mbc-1/hash/index.m3u8")).toBeNull();
+    expect(officialYoutubeId("https://www.youtube.com/watch?v=bNyUyrR0PHo")).toBe("bNyUyrR0PHo");
+  });
   it("preserves supplied channels and puts sports in the sports section", () => {
     const result = readChannelPlaylist('#EXTM3U\n#EXTINF:-1 tvg-logo="https://example.com/logo.png" group-title="Sports",SSC\nhttps://example.com/channel.m3u8');
     expect(result.channels).toEqual([{ name: "SSC", url: "https://example.com/channel.m3u8", logo: "https://example.com/logo.png", category: "رياضية" }]);
