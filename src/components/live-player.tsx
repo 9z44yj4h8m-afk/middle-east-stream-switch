@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import type { Channel } from "@/lib/channels";
 import { markActive, markInactive, notifyStream } from "@/lib/inactive-channels";
 import { resolveYoutubeLive } from "@/lib/youtube-live.functions";
+import { Button } from "@/components/ui/button";
 
 type Settings = { volume: number; muted: boolean; quality: number; autoReconnect: boolean; notify: boolean };
 type Status = "loading" | "playing" | "reconnecting" | "failed";
@@ -47,7 +48,7 @@ function usePlayerSettings() {
   return [settings, update] as const;
 }
 
-export function LivePlayer({ channel }: { channel: Channel }) {
+export function LivePlayer({ channel, compact = false, settingsOpen = false }: { channel: Channel; compact?: boolean; settingsOpen?: boolean }) {
   const [settings, update] = usePlayerSettings();
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
@@ -321,7 +322,7 @@ export function LivePlayer({ channel }: { channel: Channel }) {
 
   function togglePlay() {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video) { ytCommand(paused ? "playVideo" : "pauseVideo"); setPaused(v => !v); return; }
     if (video.paused) void video.play().catch(() => undefined);
     else video.pause();
   }
@@ -343,7 +344,7 @@ export function LivePlayer({ channel }: { channel: Channel }) {
   const ytSrc = `https://www.youtube.com/embed/${ytId}?rel=0&playsinline=1&autoplay=1&mute=1&enablejsapi=1&controls=0`;
 
   return (
-    <div>
+    <div className={compact ? "live-reference-media" : undefined}>
       <div ref={shellRef} className="relative aspect-video w-full overflow-hidden bg-surface-deep">
         {isHls ? (
           <div className="relative h-full w-full">
@@ -415,9 +416,19 @@ export function LivePlayer({ channel }: { channel: Channel }) {
             </div>
           </div>
         )}
+        {compact && <>
+          <span className="live-reference-badge" dir="ltr"><span /> LIVE</span>
+          <div className="live-reference-overlay-controls" dir="ltr">
+            <Button variant="ghost" size="icon" aria-label={paused ? "تشغيل البث" : "إيقاف البث مؤقتًا"} title={paused ? "تشغيل البث" : "إيقاف البث مؤقتًا"} onClick={togglePlay}>{paused ? <Play /> : <Pause />}</Button>
+            <Button variant="ghost" size="icon" aria-label={settings.muted ? "تشغيل الصوت" : "كتم الصوت"} title={settings.muted ? "تشغيل الصوت" : "كتم الصوت"} onClick={() => update({ muted: !settings.muted })}><VolumeIcon /></Button>
+            <Slider value={[settings.muted ? 0 : settings.volume]} max={100} step={5} aria-label="مستوى الصوت" onValueChange={([v = 0]) => update({ volume: v, muted: v === 0 })} />
+            <Button variant="ghost" size="icon" aria-label="تحديث البث" title="تحديث البث" onClick={manualReload}><RefreshCw /></Button>
+            <Button variant="ghost" size="icon" aria-label="ملء الشاشة" title="ملء الشاشة" onClick={toggleFullscreen}><Maximize /></Button>
+          </div>
+        </>}
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-border bg-surface-deep/80 px-3 py-3 sm:px-5">
+      <div className={`${compact && !settingsOpen ? "hidden" : "flex"} flex-wrap items-center gap-x-4 gap-y-3 border-t border-border bg-surface-deep/80 px-3 py-3 sm:px-5`}>
         <div className="flex min-w-[10rem] flex-1 items-center gap-2 sm:max-w-xs">
           <button
             type="button"
