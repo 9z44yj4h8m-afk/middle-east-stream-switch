@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { channels as baseChannels, type Channel, type ChannelCategory } from "./channels";
 import type { Movie } from "./movies";
 import { defaultSectionContent, type SectionContent } from "./section-content";
+import { orderChannels } from "./channel-order";
 import { defaultChatAppearance, normalizeChatAppearance, type ChatAppearance } from "./chat-appearance";
 
 export type SiteTexts = { bannerTitle: string; bannerSubtitle: string; proLabel: string; siteName?: string; libraryLink?: string; chatImage?: string };
@@ -120,7 +121,7 @@ export function mergeChannels(config: SiteConfig | undefined): Channel[] {
         description: c.description || "بث مباشر",
       };
     });
-  return [...base, ...extra];
+  return orderChannels([...base, ...extra]);
 }
 
 /** Full catalog with admin changes applied; falls back to the built-in list while loading. */
