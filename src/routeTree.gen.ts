@@ -20,6 +20,7 @@ import { Route as BedouinDramaRouteImport } from './routes/bedouin-drama'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ControlRouteImport } from './routes/control'
+import { Route as IptvRouteImport } from './routes/iptv'
 import { Route as LiveRouteImport } from './routes/live'
 import { Route as LiveChatRouteImport } from './routes/live-chat'
 import { Route as MoviesRouteImport } from './routes/movies'
@@ -97,6 +98,11 @@ const ContactRoute = ContactRouteImport.update({
 const ControlRoute = ControlRouteImport.update({
   id: '/control',
   path: '/control',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IptvRoute = IptvRouteImport.update({
+  id: '/iptv',
+  path: '/iptv',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LiveRoute = LiveRouteImport.update({
@@ -228,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof ChatRoute
   '/contact': typeof ContactRoute
   '/control': typeof ControlRoute
+  '/iptv': typeof IptvRoute
   '/live': typeof LiveRoute
   '/live-chat': typeof LiveChatRoute
   '/movies': typeof MoviesRoute
@@ -264,6 +271,7 @@ export interface FileRoutesByTo {
   '/chat': typeof ChatRoute
   '/contact': typeof ContactRoute
   '/control': typeof ControlRoute
+  '/iptv': typeof IptvRoute
   '/live': typeof LiveRoute
   '/live-chat': typeof LiveChatRoute
   '/movies': typeof MoviesRoute
@@ -301,6 +309,7 @@ export interface FileRoutesById {
   '/chat': typeof ChatRoute
   '/contact': typeof ContactRoute
   '/control': typeof ControlRoute
+  '/iptv': typeof IptvRoute
   '/live': typeof LiveRoute
   '/live-chat': typeof LiveChatRoute
   '/movies': typeof MoviesRoute
@@ -339,6 +348,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/contact'
     | '/control'
+    | '/iptv'
     | '/live'
     | '/live-chat'
     | '/movies'
@@ -375,6 +385,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/contact'
     | '/control'
+    | '/iptv'
     | '/live'
     | '/live-chat'
     | '/movies'
@@ -411,6 +422,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/contact'
     | '/control'
+    | '/iptv'
     | '/live'
     | '/live-chat'
     | '/movies'
@@ -448,6 +460,7 @@ export interface RootRouteChildren {
   ChatRoute: typeof ChatRoute
   ContactRoute: typeof ContactRoute
   ControlRoute: typeof ControlRoute
+  IptvRoute: typeof IptvRoute
   LiveRoute: typeof LiveRoute
   LiveChatRoute: typeof LiveChatRoute
   MoviesRoute: typeof MoviesRoute
@@ -550,6 +563,13 @@ declare module '@tanstack/react-router' {
       path: '/control'
       fullPath: '/control'
       preLoaderRoute: typeof ControlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/iptv': {
+      id: '/iptv'
+      path: '/iptv'
+      fullPath: '/iptv'
+      preLoaderRoute: typeof IptvRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/live': {
@@ -728,6 +748,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChatRoute: ChatRoute,
   ContactRoute: ContactRoute,
   ControlRoute: ControlRoute,
+  IptvRoute: IptvRoute,
   LiveRoute: LiveRoute,
   LiveChatRoute: LiveChatRoute,
   MoviesRoute: MoviesRoute,
