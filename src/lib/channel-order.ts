@@ -61,8 +61,12 @@ export function channelGroup(channel: Pick<Channel, "id" | "name">): ChannelGrou
 
 function channelRank(channel: Pick<Channel, "id" | "name">) {
   const group = channelGroup(channel);
-  // Inside the Saudi block MBC comes first, then Rotana, then the remaining Saudi channels.
-  const within = group === "saudi" ? (MBC_IDS.has(channel.id) ? 0 : ROTANA_IDS.has(channel.id) ? 1 : 2) : 0;
+  // Inside the Saudi block: main MBC channels, then the other MBC channels, then Rotana, then the rest.
+  const within = group !== "saudi" ? 0
+    : channel.id.startsWith("mbc-") ? 0
+    : MBC_IDS.has(channel.id) ? 1
+    : ROTANA_IDS.has(channel.id) ? 2
+    : 3;
   return { group: GROUP_RANK[group], within };
 }
 
