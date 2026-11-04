@@ -70,6 +70,12 @@ function channelRank(channel: Pick<Channel, "id" | "name">) {
   return { group: GROUP_RANK[group], within };
 }
 
+/** Keeps the first entry for every channel ID so a channel never shows twice. */
+export function dedupeChannels<T extends Pick<Channel, "id">>(list: T[]): T[] {
+  const seen = new Set<string>();
+  return list.filter((channel) => (seen.has(channel.id) ? false : (seen.add(channel.id), true)));
+}
+
 /** Stable sort of the catalog into the four groups; channels keep their current order inside a group. */
 export function orderChannels<T extends Pick<Channel, "id" | "name">>(list: T[]): T[] {
   return list
