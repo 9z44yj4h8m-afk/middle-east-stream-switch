@@ -182,7 +182,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const embeddedChat = useRouterState({ select: (state) => state.location.pathname === "/" || state.location.pathname === "/live" || state.location.pathname === "/chat" || state.location.pathname === "/live-chat" || state.location.pathname === "/voice-chat" || state.location.pathname === "/22" || state.location.pathname === "/unlock" });
+  const embeddedChat = useRouterState({ select: (state) => state.location.pathname === "/control" || state.location.pathname === "/" || state.location.pathname === "/live" || state.location.pathname === "/chat" || state.location.pathname === "/live-chat" || state.location.pathname === "/voice-chat" || state.location.pathname === "/22" || state.location.pathname === "/unlock" });
 
   return (
     <QueryClientProvider client={queryClient}>

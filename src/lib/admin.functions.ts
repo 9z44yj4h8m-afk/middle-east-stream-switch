@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { officialYoutubeId } from "@/lib/channel-playlist";
 
 const OWNER_EMAIL = "a0552525337@gmail.com";
 
@@ -67,7 +68,7 @@ export const checkStreamUrl = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     const url = data.url;
-    const yt = url.match(/(?:youtu\.be\/|v=|\/embed\/|\/live\/)([A-Za-z0-9_-]{11})/)?.[1];
+    const yt = officialYoutubeId(url);
     try {
       if (yt) {
         const r = await fetch(`https://www.youtube.com/oembed?format=json&url=${encodeURIComponent(`https://www.youtube.com/watch?v=${yt}`)}`);

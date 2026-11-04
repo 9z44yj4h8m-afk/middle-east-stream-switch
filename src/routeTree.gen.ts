@@ -19,6 +19,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BedouinDramaRouteImport } from './routes/bedouin-drama'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ControlRouteImport } from './routes/control'
 import { Route as LiveRouteImport } from './routes/live'
 import { Route as LiveChatRouteImport } from './routes/live-chat'
 import { Route as MoviesRouteImport } from './routes/movies'
@@ -91,6 +92,11 @@ const ChatRoute = ChatRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ControlRoute = ControlRouteImport.update({
+  id: '/control',
+  path: '/control',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LiveRoute = LiveRouteImport.update({
@@ -221,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/bedouin-drama': typeof BedouinDramaRoute
   '/chat': typeof ChatRoute
   '/contact': typeof ContactRoute
+  '/control': typeof ControlRoute
   '/live': typeof LiveRoute
   '/live-chat': typeof LiveChatRoute
   '/movies': typeof MoviesRoute
@@ -256,6 +263,7 @@ export interface FileRoutesByTo {
   '/bedouin-drama': typeof BedouinDramaRoute
   '/chat': typeof ChatRoute
   '/contact': typeof ContactRoute
+  '/control': typeof ControlRoute
   '/live': typeof LiveRoute
   '/live-chat': typeof LiveChatRoute
   '/movies': typeof MoviesRoute
@@ -292,6 +300,7 @@ export interface FileRoutesById {
   '/bedouin-drama': typeof BedouinDramaRoute
   '/chat': typeof ChatRoute
   '/contact': typeof ContactRoute
+  '/control': typeof ControlRoute
   '/live': typeof LiveRoute
   '/live-chat': typeof LiveChatRoute
   '/movies': typeof MoviesRoute
@@ -329,6 +338,7 @@ export interface FileRouteTypes {
     | '/bedouin-drama'
     | '/chat'
     | '/contact'
+    | '/control'
     | '/live'
     | '/live-chat'
     | '/movies'
@@ -364,6 +374,7 @@ export interface FileRouteTypes {
     | '/bedouin-drama'
     | '/chat'
     | '/contact'
+    | '/control'
     | '/live'
     | '/live-chat'
     | '/movies'
@@ -399,6 +410,7 @@ export interface FileRouteTypes {
     | '/bedouin-drama'
     | '/chat'
     | '/contact'
+    | '/control'
     | '/live'
     | '/live-chat'
     | '/movies'
@@ -435,6 +447,7 @@ export interface RootRouteChildren {
   BedouinDramaRoute: typeof BedouinDramaRoute
   ChatRoute: typeof ChatRoute
   ContactRoute: typeof ContactRoute
+  ControlRoute: typeof ControlRoute
   LiveRoute: typeof LiveRoute
   LiveChatRoute: typeof LiveChatRoute
   MoviesRoute: typeof MoviesRoute
@@ -530,6 +543,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/control': {
+      id: '/control'
+      path: '/control'
+      fullPath: '/control'
+      preLoaderRoute: typeof ControlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/live': {
@@ -707,6 +727,7 @@ const rootRouteChildren: RootRouteChildren = {
   BedouinDramaRoute: BedouinDramaRoute,
   ChatRoute: ChatRoute,
   ContactRoute: ContactRoute,
+  ControlRoute: ControlRoute,
   LiveRoute: LiveRoute,
   LiveChatRoute: LiveChatRoute,
   MoviesRoute: MoviesRoute,

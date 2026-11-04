@@ -1225,9 +1225,10 @@ body:has(.voice-studio-page) { overflow: hidden; }
 }
 
 /* IMG_3089: standalone broadcast screen; tokens are local to preserve other pages. */
-.live-reference,.live-reference-dialog {
+.live-reference,.live-reference-dialog,.owner-panel {
   --background: oklch(0.12 0 0); --foreground: oklch(0.94 0 0);
   --surface-deep: oklch(0.09 0 0); --secondary: oklch(0.18 0 0);
+  --card: var(--secondary); --card-foreground: var(--foreground);
   --muted-foreground: oklch(0.65 0 0); --primary: oklch(0.81 0.12 85);
   --primary-foreground: oklch(0.18 0.015 80); --border: oklch(0.55 0.065 85);
   --input: oklch(0.38 0 0); --accent: oklch(0.22 0.02 85); --accent-foreground: var(--primary);
