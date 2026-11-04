@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { channels as baseChannels, type Channel, type ChannelCategory } from "./channels";
 import type { Movie } from "./movies";
 import { defaultSectionContent, type SectionContent } from "./section-content";
+import { dedupeChannels, orderChannels } from "./channel-order";
 import { defaultChatAppearance, normalizeChatAppearance, type ChatAppearance } from "./chat-appearance";
 
 export type SiteTexts = { bannerTitle: string; bannerSubtitle: string; proLabel: string; siteName?: string; libraryLink?: string; chatImage?: string };
@@ -97,7 +98,7 @@ export function youtubeIdFrom(url: string): string | null {
 }
 
 export function mergeChannels(config: SiteConfig | undefined): Channel[] {
-  if (!config) return baseChannels;
+  if (!config) return orderChannels(dedupeChannels(baseChannels));
   const ov = new Map(config.overrides.map((o) => [o.channel_id, o]));
   const base = baseChannels
     .filter((c) => !ov.get(c.id)?.hidden)
@@ -120,7 +121,7 @@ export function mergeChannels(config: SiteConfig | undefined): Channel[] {
         description: c.description || "بث مباشر",
       };
     });
-  return [...base, ...extra];
+  return orderChannels(dedupeChannels([...base, ...extra]));
 }
 
 /** Full catalog with admin changes applied; falls back to the built-in list while loading. */

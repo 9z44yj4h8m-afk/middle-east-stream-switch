@@ -34,7 +34,7 @@ export const FEMALE_VOICE_PROFILES: VoiceOption[] = [
   { id: "female-hatoon", female: true, name: "هتون", label: "مخملية هادئة · سرد حنون", providerId: "Gacrux", delivery: "صوت امرأة بالغة مخملي هادئ وحنون، طبقة منخفضة ناعمة وسرد متصل بإيقاع بطيء معتدل، تشديد خفيف للكلمات المهمة، لهجة نجدية، دون خشونة أو همس" },
   { id: "female-taleen", female: true, name: "تالين", label: "ناعمة مبتسمة · خفيفة ومشرقة", providerId: "Aoede", delivery: "صوت امرأة بالغة ناعم وخفيف ومشرق، طبقة متوسطة وابتسامة مسموعة طبيعية، إيقاع متوسط مع تنويع رقيق للنغمة، لهجة أهل الرياض، دون صراخ أو مبالغة أو أداء طفولي" },
   // 2026 additions: more young girls, spoiled and soft profiles.
-  { id: "girl-nouf", female: true, name: "نوف", label: "بنت صغيرة مرحلة", providerId: "Kore", delivery: "صوت بنت صغيرة مرحلة مليانة حياة، طبقة عالية وضحكة عفوية، كلام سريع بحماس لطيف ولهجة أهل القصيم" },
+  { id: "girl-nouf", female: true, name: "نوف الصغيرة", label: "بنت صغيرة مرحلة", providerId: "Kore", delivery: "صوت بنت صغيرة مرحلة مليانة حياة، طبقة عالية وضحكة عفوية، كلام سريع بحماس لطيف ولهجة أهل القصيم" },
   { id: "girl-reemas", female: true, name: "ريماس", label: "بنت صغيرة خفيفة", providerId: "Sulafat", delivery: "صوت بنت صغيرة خفيفة وحلوة، طبقة عالية ناعمة وكلام بسيط بابتسامة مسموعة ولهجة أهل الرياض" },
   { id: "female-joori", female: true, name: "جوري", label: "دلع حلو ومسمر", providerId: "Laomedeia", delivery: "صوت بنت دلوعة حلوة، تمطّ الكلمات بدلع لطيف وتطوّل آخر الحروف مع غنج خفيف، طبقة متوسطة عالية ولهجة نجدية" },
   { id: "female-haneena", female: true, name: "حنينة", label: "ناعمة حالمة", providerId: "Autonoe", delivery: "صوت بنت ناعم حالم وهادئ، طبقة متوسطة وإيقاع بطيء حالم كأنها تحكي قبل النوم، لهجة أهل الرياض" },
