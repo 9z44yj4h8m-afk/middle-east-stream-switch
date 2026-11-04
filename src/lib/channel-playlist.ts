@@ -9,7 +9,7 @@ export function publicChannelUrl(value: string): boolean {
     const url = new URL(value);
     return url.protocol === "https:" && !url.username && !url.password
       && ![...url.searchParams.keys()].some((key) => /^(username|password|token|auth|key|apikey|access_token)$/i.test(key))
-      && !/^\/(live|movie|series)\/[^/]+\/[^/]+\//i.test(url.pathname)
+      && !/^\/(live|movie|series)\/[^/]+\/[^/]+\/\d+(?:\.[a-z0-9]+)?$/i.test(url.pathname)
       && !/\/(get|player_api)\.php$/i.test(url.pathname);
   } catch { return false; }
 }
