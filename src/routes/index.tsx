@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PortalPage } from "@/components/portal-page";
+import { LiveConsole } from "@/components/live-console";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -18,6 +18,6 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: () => <PortalPage homepage />,
+  component: LiveConsole,
 });
 
