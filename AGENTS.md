@@ -11,7 +11,7 @@
 
 ## Architecture
 - Keep /iptv as a public standalone installable viewing app using public channel/movie/series catalogs and the shared LivePlayer; namespace favorites by content kind and keep /vip and owner access gates unchanged.
-- Keep /control as a standalone owner channel panel reusing password login, has_role, admin-RLS tables and shared site-config invalidation; parse M3U with iptv-playlist-parser, fetch only allow-listed official playlists, and never import credential-bearing private IPTV into public catalogs.
+- Keep /control as a standalone owner channel panel reusing password login, has_role, admin-RLS tables and shared site-config invalidation; persist last-import IDs in site_settings and count only surviving saved rows, separate unsaved previews, parse M3U with iptv-playlist-parser, fetch only allow-listed official playlists, and never import credential-bearing private IPTV into public catalogs.
 - Home and /live share LiveConsole's reference layout and the shared LivePlayer; keep the prior category homepage at /portal so restyling never removes content, and hydrate favorite storage after mount.
 - Resolve voice profile IDs to supported provider IDs centrally; share preview/chat delivery prompts for compatibility.
 - Keep /admin-chat open and /admin-voices viewport-height, ending with save; extra tools stay in a dialog, owner guards and writes protected. Crop header/avatar artwork separately so controls remain interactive.
