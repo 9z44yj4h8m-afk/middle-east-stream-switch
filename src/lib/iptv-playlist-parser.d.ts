@@ -1,3 +1,4 @@
 declare module "iptv-playlist-parser" {
-  export function parse(text: string): { items: { name: string; url: string; tvg: { logo: string }; group: { title: string } }[] };
+  const parser: { parse(text: string): { items: { name: string; url: string; tvg: { logo: string }; group: { title: string } }[] } };
+  export default parser;
 }

@@ -1,4 +1,4 @@
-import { parse } from "iptv-playlist-parser";
+import parser from "iptv-playlist-parser";
 import type { ChannelCategory } from "./channels";
 
 export type PlaylistChannel = { name: string; url: string; logo: string; category: ChannelCategory };
@@ -25,7 +25,7 @@ export function playlistCategory(group: string): ChannelCategory {
 
 export function readChannelPlaylist(text: string): { channels: PlaylistChannel[]; skipped: number } {
   if (text.length > 2_000_000 || !text.replace(/^\uFEFF/, "").trimStart().startsWith("#EXTM3U")) throw new Error("اختر ملف M3U صحيحًا لا يتجاوز 2 ميجابايت.");
-  const items = parse(text.replace(/^\uFEFF/, "")).items;
+  const items = parser.parse(text.replace(/^\uFEFF/, "")).items;
   const seen = new Set<string>();
   const channels: PlaylistChannel[] = [];
   for (const item of items) {
