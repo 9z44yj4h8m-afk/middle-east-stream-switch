@@ -8,6 +8,13 @@
       "when": 1793427908486,
       "tag": "0000_grant_owner_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794311971503,
+      "tag": "0001_migration",
+      "breakpoints": true
     }
   ]
 }
