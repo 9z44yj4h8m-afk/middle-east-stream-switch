@@ -151,6 +151,7 @@ export function LivePlayer({ channel, compact = false, settingsOpen = false }: {
     if (!video) return;
     let destroyed = false;
     let stallTimer: number | undefined;
+    let triedNative = false;
     const drop = () => !destroyed && handleDrop();
     const startTimer = window.setTimeout(() => {
       if (video.readyState < 2) drop();
@@ -189,6 +190,9 @@ export function LivePlayer({ channel, compact = false, settingsOpen = false }: {
         .then(({ default: HlsCtor, FetchLoader }) => {
           if (destroyed) return;
           if (!HlsCtor.isSupported()) return playNative();
+          // iOS Safari/Chrome: ManagedMediaSource never opens unless remote
+          // playback is disabled, which leaves the player loading forever.
+          (video as HTMLVideoElement & { disableRemotePlayback?: boolean }).disableRemotePlayback = true;
           const hls = new HlsCtor({
             enableWorker: true,
             maxBufferLength: 30,
@@ -215,6 +219,11 @@ export function LivePlayer({ channel, compact = false, settingsOpen = false }: {
             }
             hls.destroy();
             hlsRef.current = null;
+            if (!triedNative && video.canPlayType("application/vnd.apple.mpegurl")) {
+              triedNative = true;
+              playNative();
+              return;
+            }
             drop();
           });
           hls.loadSource(channel.streamUrl!);
