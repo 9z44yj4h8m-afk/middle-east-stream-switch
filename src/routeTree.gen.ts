@@ -23,6 +23,7 @@ import { Route as ControlRouteImport } from './routes/control'
 import { Route as IptvRouteImport } from './routes/iptv'
 import { Route as LiveRouteImport } from './routes/live'
 import { Route as LiveChatRouteImport } from './routes/live-chat'
+import { Route as MicRouteImport } from './routes/mic'
 import { Route as MoviesRouteImport } from './routes/movies'
 import { Route as MyAccountRouteImport } from './routes/my-account'
 import { Route as PortalRouteImport } from './routes/portal'
@@ -114,6 +115,11 @@ const LiveRoute = LiveRouteImport.update({
 const LiveChatRoute = LiveChatRouteImport.update({
   id: '/live-chat',
   path: '/live-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MicRoute = MicRouteImport.update({
+  id: '/mic',
+  path: '/mic',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MoviesRoute = MoviesRouteImport.update({
@@ -243,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/iptv': typeof IptvRoute
   '/live': typeof LiveRoute
   '/live-chat': typeof LiveChatRoute
+  '/mic': typeof MicRoute
   '/movies': typeof MoviesRoute
   '/my-account': typeof MyAccountRoute
   '/portal': typeof PortalRoute
@@ -281,6 +288,7 @@ export interface FileRoutesByTo {
   '/iptv': typeof IptvRoute
   '/live': typeof LiveRoute
   '/live-chat': typeof LiveChatRoute
+  '/mic': typeof MicRoute
   '/movies': typeof MoviesRoute
   '/my-account': typeof MyAccountRoute
   '/portal': typeof PortalRoute
@@ -320,6 +328,7 @@ export interface FileRoutesById {
   '/iptv': typeof IptvRoute
   '/live': typeof LiveRoute
   '/live-chat': typeof LiveChatRoute
+  '/mic': typeof MicRoute
   '/movies': typeof MoviesRoute
   '/my-account': typeof MyAccountRoute
   '/portal': typeof PortalRoute
@@ -360,6 +369,7 @@ export interface FileRouteTypes {
     | '/iptv'
     | '/live'
     | '/live-chat'
+    | '/mic'
     | '/movies'
     | '/my-account'
     | '/portal'
@@ -398,6 +408,7 @@ export interface FileRouteTypes {
     | '/iptv'
     | '/live'
     | '/live-chat'
+    | '/mic'
     | '/movies'
     | '/my-account'
     | '/portal'
@@ -436,6 +447,7 @@ export interface FileRouteTypes {
     | '/iptv'
     | '/live'
     | '/live-chat'
+    | '/mic'
     | '/movies'
     | '/my-account'
     | '/portal'
@@ -475,6 +487,7 @@ export interface RootRouteChildren {
   IptvRoute: typeof IptvRoute
   LiveRoute: typeof LiveRoute
   LiveChatRoute: typeof LiveChatRoute
+  MicRoute: typeof MicRoute
   MoviesRoute: typeof MoviesRoute
   MyAccountRoute: typeof MyAccountRoute
   PortalRoute: typeof PortalRoute
@@ -597,6 +610,13 @@ declare module '@tanstack/react-router' {
       path: '/live-chat'
       fullPath: '/live-chat'
       preLoaderRoute: typeof LiveChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mic': {
+      id: '/mic'
+      path: '/mic'
+      fullPath: '/mic'
+      preLoaderRoute: typeof MicRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/movies': {
@@ -771,6 +791,7 @@ const rootRouteChildren: RootRouteChildren = {
   IptvRoute: IptvRoute,
   LiveRoute: LiveRoute,
   LiveChatRoute: LiveChatRoute,
+  MicRoute: MicRoute,
   MoviesRoute: MoviesRoute,
   MyAccountRoute: MyAccountRoute,
   PortalRoute: PortalRoute,

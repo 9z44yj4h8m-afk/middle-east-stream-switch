@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { VoicePinGate } from "@/components/admin/voice-pin-gate";
 import { useMember } from "@/components/member-provider";
-import { MicVoiceChanger } from "@/components/admin/mic-voice-changer";
+import { Link } from "@tanstack/react-router";
 import { SayNowForm } from "@/components/admin/voice-chat-manager";
 
 export const Route = createFileRoute("/22")({
@@ -39,7 +39,7 @@ function AdminVoicesPage() {
   const locked = admin !== true;
   return <div dir="rtl" className="voice-studio-page voice-studio-full">
     <main className="voice-studio-main">
-      <MicVoiceChanger />
+      <Link to="/mic" className="block text-center rounded-xl bg-primary text-primary-foreground font-bold py-2 mb-2">🎙️ حوّل صوتي لصوت بنت</Link>
       <SayNowForm locked={locked} />
     </main>
   </div>;
