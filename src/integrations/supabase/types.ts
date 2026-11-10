@@ -415,6 +415,21 @@ export type Database = {
         }
       }
       ensure_member_profile: { Args: never; Returns: undefined }
+      get_my_chat_ban: {
+        Args: { p_name: string }
+        Returns: {
+          kind: string
+          name: string
+          until: string
+        }[]
+      }
+      get_my_room_move: {
+        Args: { p_name: string }
+        Returns: {
+          moved_at: string
+          room_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
