@@ -12,6 +12,7 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
   const [clip, setClip] = useState<string | null>(null);
   const [err, setErr] = useState("");
   const [note, setNote] = useState<File | null>(null);
+  const [snap, setSnap] = useState<File | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const player = useRef<HTMLAudioElement | null>(null);
   // iPhone only allows sound started from a tap: unlock one player on the stop tap and reuse it.
@@ -60,7 +61,7 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
       const url = URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
       setClip((old) => { if (old) URL.revokeObjectURL(old); return url; });
-      setNote(null); void toVoiceNote(bytes).then(setNote);
+      setNote(null); setSnap(null); void toVoiceNote(bytes).then(setNote); void toSnapVideo(bytes).then(setSnap);
       const a = player.current ?? new Audio(); player.current = a; a.src = url; void a.play().catch(() => {});
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
@@ -87,8 +88,45 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
     } catch { return wav; }
   }
 
-  async function share() {
-    const f = note;
+  // Snapchat only accepts photos/videos, so render the voice into a short vertical video.
+  async function toSnapVideo(bytes: Uint8Array): Promise<File | null> {
+    try {
+      const types = ["video/mp4", "video/webm;codecs=vp8,opus", "video/webm"];
+      const type = types.find((t) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(t));
+      if (!type) return null;
+      const ctx = new AudioContext();
+      const buf = await ctx.decodeAudioData(bytes.slice().buffer as ArrayBuffer);
+      const dest = ctx.createMediaStreamDestination();
+      const an = ctx.createAnalyser(); an.fftSize = 64;
+      const src = ctx.createBufferSource(); src.buffer = buf; src.connect(an); an.connect(dest);
+      const cv = document.createElement("canvas"); cv.width = 720; cv.height = 1280;
+      const g = cv.getContext("2d")!;
+      const css = getComputedStyle(document.documentElement);
+      const bg = css.getPropertyValue("--background").trim() || "#000", fg = css.getPropertyValue("--primary").trim() || "#d4af37";
+      const data = new Uint8Array(an.frequencyBinCount);
+      let raf = 0;
+      const draw = () => {
+        an.getByteFrequencyData(data);
+        g.fillStyle = bg; g.fillRect(0, 0, 720, 1280); g.fillStyle = fg;
+        g.font = "bold 64px sans-serif"; g.textAlign = "center"; g.fillText("🎙️", 360, 440);
+        data.forEach((v, i) => { const h = 20 + v * 1.4; g.fillRect(80 + i * 18, 640 - h / 2, 12, h); });
+        raf = requestAnimationFrame(draw);
+      };
+      draw();
+      const stream = new MediaStream([...cv.captureStream(30).getVideoTracks(), ...dest.stream.getAudioTracks()]);
+      const rec = new MediaRecorder(stream, { mimeType: type });
+      const chunks: Blob[] = [];
+      rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+      const done = new Promise<void>((r) => { rec.onstop = () => r(); });
+      rec.start(); src.start(); src.onended = () => setTimeout(() => rec.stop(), 200);
+      await done; cancelAnimationFrame(raf); void ctx.close();
+      const mime = type.split(";")[0] ?? "video/mp4";
+      return new File([new Blob(chunks, { type: mime })], mime.includes("mp4") ? "voice.mp4" : "voice.webm", { type: mime });
+    } catch { return null; }
+  }
+
+  async function share(f0?: File | null) {
+    const f = f0 === undefined ? note : f0;
     if (!f) return;
     try {
       if (navigator.canShare?.({ files: [f] })) { await navigator.share({ files: [f] }); return; }
@@ -120,9 +158,13 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
       {state === "busy" && text && <p className="text-sm text-primary">البنت تجهّز الصوت…</p>}
       {err && <p className="text-sm text-destructive">{err}</p>}
       {clip && <div className="space-y-2"><audio src={clip} controls className="w-full" />
-        <button type="button" onClick={share} disabled={!note}
+        <button type="button" onClick={() => void share()} disabled={!note}
           className="w-full rounded-xl px-5 py-3 font-bold bg-primary text-primary-foreground disabled:opacity-60">
           {note ? "📲 أرسل للواتساب أو التليجرام" : "يجهّز المقطع للإرسال…"}
+        </button>
+        <button type="button" onClick={() => void share(snap)} disabled={!snap}
+          className="w-full rounded-xl px-5 py-3 font-bold border border-primary text-primary disabled:opacity-60">
+          {snap ? "👻 أرسل للسناب (فيديو)" : "يجهّز فيديو السناب…"}
         </button>
         <a href={clip} download="sawt-bint.wav" className="inline-block rounded-xl px-4 py-2 text-sm border border-primary text-primary">حفظ المقطع</a></div>}
     </>
