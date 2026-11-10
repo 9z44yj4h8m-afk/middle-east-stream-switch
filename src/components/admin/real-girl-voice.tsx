@@ -27,13 +27,13 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
       const chunks: Blob[] = [];
       const m = new MediaRecorder(stream);
       m.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-      m.onstop = () => { stream.getTracks().forEach((t) => t.stop()); void convert(new Blob(chunks, { type: (m.mimeType || "audio/mp4").split(";")[0] || "audio/mp4" })); };
+      m.onstop = () => { stream.getTracks().forEach((t) => t.stop()); void transcribe(new Blob(chunks, { type: (m.mimeType || "audio/mp4").split(";")[0] || "audio/mp4" })); };
       m.start(); recRef.current = m; setState("rec");
       setTimeout(() => m.state === "recording" && m.stop(), 20000);
     } catch { setErr("اسمح للموقع باستخدام المايك من إعدادات سفاري."); }
   }
 
-  async function convert(blob: Blob) {
+  async function transcribe(blob: Blob) {
     setState("busy");
     try {
       const fd = new FormData();
@@ -43,6 +43,17 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
       const said = (j.text ?? "").trim();
       if (!said) throw new Error("ما سمعت كلام واضح، جرّب مرة ثانية.");
       setText(said);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "";
+      setErr(msg || "صار خطأ، جرّب مرة ثانية.");
+    } finally { setState("idle"); }
+  }
+
+  async function send() {
+    const said = text.trim();
+    if (!said) { setErr("اكتب أو سجّل كلامك أولًا."); return; }
+    setState("busy"); setErr(""); setClip(null);
+    try {
       const { audio } = await speak({ data: { text: said, voice, pin: "2121" } });
       const bin = atob(audio); const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -58,15 +69,23 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
   const body = (
     <>
       <h2 className="text-lg font-bold text-primary">👩 صوت بنت حقيقي</h2>
-      <p className="text-sm text-muted-foreground">اضغط سجّل وتكلم (لين 20 ثانية)، ثم وقّف. كلامك يرجع بصوت بنت حقيقي بعد ثواني.</p>
+      <p className="text-sm text-muted-foreground">اضغط سجّل وتكلم (لين 20 ثانية)، ثم وقّف. كلامك ينكتب في المربع، صحّحه إذا تبي، ثم اضغط أرسل ويرجع بصوت البنت.</p>
       <select value={voice} onChange={(e) => setVoice(e.target.value)} className="w-full rounded-xl border border-border bg-background text-foreground p-2">
         {FEMALE_VOICE_PROFILES.map((v) => <option key={v.id} value={v.id}>{v.name} · {v.label}</option>)}
       </select>
-      <button type="button" disabled={state === "busy"} onClick={state === "rec" ? stopTap : start}
-        className={`w-full rounded-xl px-5 py-3 font-bold ${state === "rec" ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"} disabled:opacity-60`}>
-        {state === "rec" ? "⏹ وقّف وحوّل" : state === "busy" ? "جاري التحويل…" : "⏺ سجّل كلامي"}
-      </button>
-      {text && <p className="text-sm text-foreground">قلت: «{text}»</p>}
+      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3}
+        placeholder="صحّح كلامك هنا أو اكتبه مباشرة…"
+        className="w-full rounded-xl border border-border bg-background text-foreground p-2 text-sm" />
+      <div className="flex gap-2">
+        <button type="button" disabled={state === "busy"} onClick={state === "rec" ? stopTap : start}
+          className={`flex-1 rounded-xl px-5 py-3 font-bold ${state === "rec" ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"} disabled:opacity-60`}>
+          {state === "rec" ? "⏹ وقّف" : state === "busy" ? "جاري التحويل…" : "⏺ سجّل كلامي"}
+        </button>
+        <button type="button" disabled={state !== "idle" || !text.trim()} onClick={send}
+          className="flex-1 rounded-xl px-5 py-3 font-bold bg-primary text-primary-foreground disabled:opacity-60">
+          📤 أرسل
+        </button>
+      </div>
       {state === "busy" && text && <p className="text-sm text-primary">البنت تجهّز الصوت…</p>}
       {err && <p className="text-sm text-destructive">{err}</p>}
       {clip && <div className="space-y-2"><audio src={clip} controls className="w-full" />
