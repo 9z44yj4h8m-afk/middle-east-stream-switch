@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { VoicePinGate } from "@/components/admin/voice-pin-gate";
 import { useMember } from "@/components/member-provider";
 import { SayNowForm } from "@/components/admin/voice-chat-manager";
 
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/22")({
     { name: "apple-mobile-web-app-title", content: "الأصوات" },
   ],
   }),
-  component: AdminVoicesPage,
+  component: () => <VoicePinGate><AdminVoicesPage /></VoicePinGate>,
 });
 
 function AdminVoicesPage() {

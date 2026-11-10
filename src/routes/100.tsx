@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { VoicePinGate } from "@/components/admin/voice-pin-gate";
 import { useMember } from "@/components/member-provider";
 import { AdminPasswordLogin } from "@/components/admin/password-login";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/100")({
     { name: "twitter:card", content: "summary" },
     { name: "robots", content: "noindex" },
   ] }),
-  component: PanelSettingsPage,
+  component: () => <VoicePinGate><PanelSettingsPage /></VoicePinGate>,
 });
 
 const input = "h-10 w-full rounded-xl border border-border bg-background/60 px-3 text-sm text-foreground outline-none";
