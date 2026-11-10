@@ -376,10 +376,11 @@ function OverviewTab() {
   const members = useQuery({ queryKey: ["admin-members"], queryFn: () => fetchMembers() });
   const chat = useQuery({ queryKey: ["admin-chat-count"], queryFn: async () => (await supabase.from("chat_messages").select("id", { count: "exact", head: true })).count ?? 0 });
   const hiddenCh = (data?.overrides ?? []).filter((o) => o.hidden).length;
+  const hiddenFilms = (useHiddenMovies().data ?? []).length;
   const stats = [
     ["القنوات الظاهرة", baseChannels.length + (data?.customChannels.length ?? 0) - hiddenCh],
     ["القنوات المضافة", data?.customChannels.length ?? 0],
-    ["الأفلام", baseMovies.length + (data?.customMovies.length ?? 0) - (data?.hiddenMovies.length ?? 0)],
+    ["الأفلام", baseMovies.length + (data?.customMovies.length ?? 0) - hiddenFilms],
     ["الأعضاء", members.data?.length ?? "…"],
     ["الأعضاء الموقوفون", members.data?.filter((m) => m.suspended).length ?? "…"],
     ["رسائل الدردشة", chat.data ?? "…"],
