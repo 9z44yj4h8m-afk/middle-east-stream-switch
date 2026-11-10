@@ -20,7 +20,7 @@ export function RealGirlVoice() {
       const chunks: Blob[] = [];
       const m = new MediaRecorder(stream);
       m.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-      m.onstop = () => { stream.getTracks().forEach((t) => t.stop()); void convert(new Blob(chunks, { type: (m.mimeType || "audio/mp4").split(";")[0] })); };
+      m.onstop = () => { stream.getTracks().forEach((t) => t.stop()); void convert(new Blob(chunks, { type: (m.mimeType || "audio/mp4").split(";")[0] || "audio/mp4" })); };
       m.start(); recRef.current = m; setState("rec");
       setTimeout(() => m.state === "recording" && m.stop(), 20000);
     } catch { setErr("اسمح للموقع باستخدام المايك من إعدادات سفاري."); }
