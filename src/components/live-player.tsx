@@ -380,7 +380,7 @@ export function LivePlayer({ channel, compact = false, settingsOpen = false }: {
             </button>
           </div>
         ) : (
-          <iframe
+          <iframe referrerPolicy="strict-origin-when-cross-origin"
             key={reloadKey}
             ref={frameRef}
             className="h-full w-full"
