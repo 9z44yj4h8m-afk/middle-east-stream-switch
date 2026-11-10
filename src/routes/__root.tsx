@@ -106,6 +106,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      // Live CDNs (e.g. MBC) return 403 when a foreign Referer is sent; iPhone native video can't override it per request.
+      { name: "referrer", content: "no-referrer" },
       { title: "المغني لايف" },
       { name: "description", content: "منصة عربية لمشاهدة البث المباشر داخل الموقع." },
       { name: "author", content: "المغني لايف" },

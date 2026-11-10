@@ -73,7 +73,7 @@ function MoviesPage() {
     <div dir="rtl" className="min-h-screen bg-background pb-28 text-foreground">
       <main className="mx-auto max-w-6xl px-3 pt-4 sm:px-6">
         {playing && <section id="movie-player" aria-label="شاشة الأفلام" className="mb-6 scroll-mt-24">
-          <div className="broadcast-screen design-gleam aspect-video"><iframe key={`${playing.youtubeId}-${muted}`} src={`https://www.youtube.com/embed/${playing.youtubeId}?autoplay=1&mute=${muted ? 1 : 0}&playsinline=1&rel=0`} title={playing.title} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen className="h-full w-full" /></div>
+          <div className="broadcast-screen design-gleam aspect-video"><iframe referrerPolicy="strict-origin-when-cross-origin" key={`${playing.youtubeId}-${muted}`} src={`https://www.youtube.com/embed/${playing.youtubeId}?autoplay=1&mute=${muted ? 1 : 0}&playsinline=1&rel=0`} title={playing.title} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen className="h-full w-full" /></div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3"><div className="min-w-0"><h2 className="font-bold">{playing.title}</h2><p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground"><Clock className="h-3.5 w-3.5" />{playing.duration} · {playing.source}</p></div><Button variant="outline" size="sm" onClick={() => { const candidates = all.filter((m) => (!lang || m.lang === lang) && m.id !== playing.id); const next = candidates[Math.floor(Math.random() * candidates.length)]; if (next) { setPlaying(next); setMuted(true); } }}><Shuffle className="h-4 w-4" />فيلم عشوائي</Button></div>
         </section>}
         <div className="flex items-center gap-2">
