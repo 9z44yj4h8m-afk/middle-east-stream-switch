@@ -11,6 +11,7 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
   const [text, setText] = useState("");
   const [clip, setClip] = useState<string | null>(null);
   const [err, setErr] = useState("");
+  const [note, setNote] = useState<File | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const player = useRef<HTMLAudioElement | null>(null);
   // iPhone only allows sound started from a tap: unlock one player on the stop tap and reuse it.
@@ -59,11 +60,44 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
       const url = URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
       setClip((old) => { if (old) URL.revokeObjectURL(old); return url; });
+      setNote(null); void toVoiceNote(bytes).then(setNote);
       const a = player.current ?? new Audio(); player.current = a; a.src = url; void a.play().catch(() => {});
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
       setErr(/auth|Unauthorized|مشترك|401/i.test(msg) ? "لازم تسجّل دخول المالك أولًا من لوحة الأصوات." : msg || "صار خطأ، جرّب مرة ثانية.");
     } finally { setState("idle"); }
+  }
+
+  // Re-encode to a compressed voice-note file (opus/m4a) so chat apps treat it like a real clip.
+  async function toVoiceNote(bytes: Uint8Array): Promise<File> {
+    const wav = new File([bytes], "voice-note.wav", { type: "audio/wav" });
+    try {
+      const types = ["audio/ogg;codecs=opus", "audio/mp4", "audio/webm;codecs=opus"];
+      const type = types.find((t) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(t));
+      if (!type) return wav;
+      const ctx = new AudioContext();
+      const buf = await ctx.decodeAudioData(bytes.slice().buffer);
+      const dest = ctx.createMediaStreamDestination();
+      const src = ctx.createBufferSource(); src.buffer = buf; src.connect(dest);
+      const rec = new MediaRecorder(dest.stream, { mimeType: type, audioBitsPerSecond: 32000 });
+      const chunks: Blob[] = [];
+      rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+      const done = new Promise<void>((r) => { rec.onstop = () => r(); });
+      rec.start(); src.start(); src.onended = () => rec.stop();
+      await done; void ctx.close();
+      const ext = type.includes("ogg") ? "ogg" : type.includes("mp4") ? "m4a" : "webm";
+      return new File([new Blob(chunks, { type: type.split(";")[0] })], `voice-note.${ext}`, { type: type.split(";")[0] });
+    } catch { return wav; }
+  }
+
+  async function share() {
+    const f = note;
+    if (!f) return;
+    try {
+      if (navigator.canShare?.({ files: [f] })) { await navigator.share({ files: [f] }); return; }
+    } catch (e) { if ((e as Error).name === "AbortError") return; }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(f); a.download = f.name; a.click();
+    setErr("جهازك ما يدعم المشاركة المباشرة، حمّلنا المقطع — أرسله من الملفات للواتساب أو التليجرام.");
   }
 
   const body = (
@@ -89,6 +123,10 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
       {state === "busy" && text && <p className="text-sm text-primary">البنت تجهّز الصوت…</p>}
       {err && <p className="text-sm text-destructive">{err}</p>}
       {clip && <div className="space-y-2"><audio src={clip} controls className="w-full" />
+        <button type="button" onClick={share} disabled={!note}
+          className="w-full rounded-xl px-5 py-3 font-bold bg-primary text-primary-foreground disabled:opacity-60">
+          {note ? "📲 أرسل للواتساب أو التليجرام" : "يجهّز المقطع للإرسال…"}
+        </button>
         <a href={clip} download="sawt-bint.wav" className="inline-block rounded-xl px-4 py-2 text-sm border border-primary text-primary">حفظ المقطع</a></div>}
     </>
   );
