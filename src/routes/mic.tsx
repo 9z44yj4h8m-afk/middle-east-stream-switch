@@ -20,7 +20,7 @@ export const Route = createFileRoute("/mic")({
 function MicPage() {
   return <div dir="rtl" className="min-h-screen overflow-y-auto bg-background p-4">
     <Link to="/22" className="inline-block mb-3 text-sm text-primary">→ رجوع للوحة الأصوات</Link>
-    <RealGirlVoice />
     <MicVoiceChanger />
+    <RealGirlVoice />
   </div>;
 }
