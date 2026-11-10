@@ -22,6 +22,24 @@ const SOURCES: Source[] = [
 let cache: { at: number; list: Movie[] } | null = null;
 const TTL = 60 * 60 * 1000;
 
+// The owner's hidden list is owner-only in the database, so the public catalog is
+// filtered here on the server instead of shipping the list to visitors.
+let hiddenCache: { at: number; ids: Set<string> } | null = null;
+const HIDDEN_TTL = 60 * 1000;
+
+async function hiddenIds(): Promise<Set<string>> {
+  if (hiddenCache && Date.now() - hiddenCache.at < HIDDEN_TTL) return hiddenCache.ids;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin.from("hidden_movies").select("movie_id");
+    const ids = new Set((data ?? []).map((r) => r.movie_id));
+    hiddenCache = { at: Date.now(), ids };
+    return ids;
+  } catch {
+    return hiddenCache?.ids ?? new Set();
+  }
+}
+
 type VR = {
   videoId: string;
   title?: { runs?: { text: string }[] };
@@ -89,7 +107,9 @@ async function fromChannel({ handle, name, lang }: Source): Promise<Movie[]> {
 }
 
 export const getFeaturedMovies = createServerFn({ method: "GET" }).handler(async () => {
-  if (cache && Date.now() - cache.at < TTL) return cache.list;
+  const hidden = await hiddenIds();
+  const visible = (list: Movie[]) => (hidden.size ? list.filter((m) => !hidden.has(m.id)) : list);
+  if (cache && Date.now() - cache.at < TTL) return visible(cache.list);
   try {
     const lists = await Promise.all(SOURCES.map((s) => fromChannel(s).catch(() => [])));
     const merged: Movie[] = [];
@@ -98,8 +118,8 @@ export const getFeaturedMovies = createServerFn({ method: "GET" }).handler(async
     for (let i = 0; i < max; i++) for (const l of lists) if (l[i]) merged.push(l[i]!);
     const list = [...merged, ...fallback].filter((m, i, a) => a.findIndex((x) => x.youtubeId === m.youtubeId) === i);
     if (list.length > fallback.length) cache = { at: Date.now(), list };
-    return list;
+    return visible(list);
   } catch {
-    return fallback;
+    return visible(fallback);
   }
 });

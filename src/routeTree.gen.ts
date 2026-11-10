@@ -38,6 +38,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ChannelsSectionRouteImport } from './routes/channels.$section'
 import { Route as FeaturedIndexRouteImport } from './routes/featured.index'
 import { Route as FeaturedChannelRouteImport } from './routes/featured.$channel'
+import { Route as ApiPublicBotAvatarRouteImport } from './routes/api/public/bot-avatar'
 import { Route as ApiPublicBotVoiceRouteImport } from './routes/api/public/bot-voice'
 import { Route as ApiPublicBotVoiceTurnRouteImport } from './routes/api/public/bot-voice-turn'
 import { Route as ApiPublicHlsRouteImport } from './routes/api/public/hls'
@@ -190,6 +191,11 @@ const FeaturedChannelRoute = FeaturedChannelRouteImport.update({
   path: '/featured/$channel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBotAvatarRoute = ApiPublicBotAvatarRouteImport.update({
+  id: '/api/public/bot-avatar',
+  path: '/api/public/bot-avatar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBotVoiceRoute = ApiPublicBotVoiceRouteImport.update({
   id: '/api/public/bot-voice',
   path: '/api/public/bot-voice',
@@ -252,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/channels/$section': typeof ChannelsSectionRoute
   '/featured/$channel': typeof FeaturedChannelRoute
   '/featured/': typeof FeaturedIndexRoute
+  '/api/public/bot-avatar': typeof ApiPublicBotAvatarRoute
   '/api/public/bot-voice': typeof ApiPublicBotVoiceRoute
   '/api/public/bot-voice-turn': typeof ApiPublicBotVoiceTurnRoute
   '/api/public/hls': typeof ApiPublicHlsRoute
@@ -289,6 +296,7 @@ export interface FileRoutesByTo {
   '/channels/$section': typeof ChannelsSectionRoute
   '/featured/$channel': typeof FeaturedChannelRoute
   '/featured': typeof FeaturedIndexRoute
+  '/api/public/bot-avatar': typeof ApiPublicBotAvatarRoute
   '/api/public/bot-voice': typeof ApiPublicBotVoiceRoute
   '/api/public/bot-voice-turn': typeof ApiPublicBotVoiceTurnRoute
   '/api/public/hls': typeof ApiPublicHlsRoute
@@ -327,6 +335,7 @@ export interface FileRoutesById {
   '/channels/$section': typeof ChannelsSectionRoute
   '/featured/$channel': typeof FeaturedChannelRoute
   '/featured/': typeof FeaturedIndexRoute
+  '/api/public/bot-avatar': typeof ApiPublicBotAvatarRoute
   '/api/public/bot-voice': typeof ApiPublicBotVoiceRoute
   '/api/public/bot-voice-turn': typeof ApiPublicBotVoiceTurnRoute
   '/api/public/hls': typeof ApiPublicHlsRoute
@@ -366,6 +375,7 @@ export interface FileRouteTypes {
     | '/channels/$section'
     | '/featured/$channel'
     | '/featured/'
+    | '/api/public/bot-avatar'
     | '/api/public/bot-voice'
     | '/api/public/bot-voice-turn'
     | '/api/public/hls'
@@ -403,6 +413,7 @@ export interface FileRouteTypes {
     | '/channels/$section'
     | '/featured/$channel'
     | '/featured'
+    | '/api/public/bot-avatar'
     | '/api/public/bot-voice'
     | '/api/public/bot-voice-turn'
     | '/api/public/hls'
@@ -440,6 +451,7 @@ export interface FileRouteTypes {
     | '/channels/$section'
     | '/featured/$channel'
     | '/featured/'
+    | '/api/public/bot-avatar'
     | '/api/public/bot-voice'
     | '/api/public/bot-voice-turn'
     | '/api/public/hls'
@@ -478,6 +490,7 @@ export interface RootRouteChildren {
   ChannelsSectionRoute: typeof ChannelsSectionRoute
   FeaturedChannelRoute: typeof FeaturedChannelRoute
   FeaturedIndexRoute: typeof FeaturedIndexRoute
+  ApiPublicBotAvatarRoute: typeof ApiPublicBotAvatarRoute
   ApiPublicBotVoiceRoute: typeof ApiPublicBotVoiceRoute
   ApiPublicBotVoiceTurnRoute: typeof ApiPublicBotVoiceTurnRoute
   ApiPublicHlsRoute: typeof ApiPublicHlsRoute
@@ -691,6 +704,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeaturedChannelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bot-avatar': {
+      id: '/api/public/bot-avatar'
+      path: '/api/public/bot-avatar'
+      fullPath: '/api/public/bot-avatar'
+      preLoaderRoute: typeof ApiPublicBotAvatarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/bot-voice': {
       id: '/api/public/bot-voice'
       path: '/api/public/bot-voice'
@@ -766,6 +786,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChannelsSectionRoute: ChannelsSectionRoute,
   FeaturedChannelRoute: FeaturedChannelRoute,
   FeaturedIndexRoute: FeaturedIndexRoute,
+  ApiPublicBotAvatarRoute: ApiPublicBotAvatarRoute,
   ApiPublicBotVoiceRoute: ApiPublicBotVoiceRoute,
   ApiPublicBotVoiceTurnRoute: ApiPublicBotVoiceTurnRoute,
   ApiPublicHlsRoute: ApiPublicHlsRoute,

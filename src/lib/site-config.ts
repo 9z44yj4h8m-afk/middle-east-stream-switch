@@ -52,16 +52,14 @@ export type SiteConfig = {
   customChannels: { id: string; name: string; category: string; stream_url: string; logo: string; description: string }[];
   overrides: { channel_id: string; hidden: boolean; category: string | null; name: string | null }[];
   customMovies: { id: string; youtube_id: string; title: string; description: string }[];
-  hiddenMovies: string[];
 };
 
 async function fetchSiteConfig(): Promise<SiteConfig> {
-  const [settings, custom, overrides, movies, hidden] = await Promise.all([
+  const [settings, custom, overrides, movies] = await Promise.all([
     supabase.from("site_settings").select("key,value"),
     supabase.from("custom_channels").select("id,name,category,stream_url,logo,description").order("created_at"),
     supabase.from("channel_overrides").select("channel_id,hidden,category,name"),
     supabase.from("custom_movies").select("id,youtube_id,title,description").order("created_at", { ascending: false }),
-    supabase.from("hidden_movies").select("movie_id"),
   ]);
   const get = <T,>(key: string, fallback: T): T => {
     const row = settings.data?.find((r) => r.key === key);
@@ -82,7 +80,6 @@ async function fetchSiteConfig(): Promise<SiteConfig> {
     customChannels: custom.data ?? [],
     overrides: overrides.data ?? [],
     customMovies: movies.data ?? [],
-    hiddenMovies: (hidden.data ?? []).map((r) => r.movie_id),
   };
 }
 
@@ -90,6 +87,21 @@ export const siteConfigKey = ["site-config"] as const;
 
 export function useSiteConfig() {
   return useQuery({ queryKey: siteConfigKey, queryFn: fetchSiteConfig, staleTime: 60_000 });
+}
+
+export const hiddenMoviesKey = ["hidden-movies"] as const;
+
+/** Owner-only: visitors no longer read the hidden list, the server filters the catalog instead. */
+export function useHiddenMovies() {
+  return useQuery({
+    queryKey: hiddenMoviesKey,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("hidden_movies").select("movie_id");
+      if (error) return [] as string[];
+      return (data ?? []).map((r) => r.movie_id);
+    },
+    staleTime: 30_000,
+  });
 }
 
 export function youtubeIdFrom(url: string): string | null {
@@ -130,9 +142,9 @@ export function useCatalog(): Channel[] {
   return mergeChannels(data);
 }
 
+/** Owner additions on top of the server-filtered catalog; hiding happens on the server. */
 export function applyMovieConfig(movies: Movie[], config: SiteConfig | undefined): Movie[] {
   if (!config) return movies;
-  const hidden = new Set(config.hiddenMovies);
   const extra: Movie[] = config.customMovies.map((m) => ({
     id: `custom-${m.id}`,
     youtubeId: m.youtube_id,
@@ -142,5 +154,5 @@ export function applyMovieConfig(movies: Movie[], config: SiteConfig | undefined
     source: "ALMOGHANI",
     lang: "عربي",
   } as Movie));
-  return [...extra, ...movies.filter((m) => !hidden.has(m.id))];
+  return [...extra, ...movies];
 }

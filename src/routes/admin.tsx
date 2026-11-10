@@ -16,6 +16,7 @@ import { movies as baseMovies } from "@/lib/movies";
 import { listMembers, listRoles, setMemberRole, findMemberByEmail, checkStreamUrl, createMember, setMemberPassword } from "@/lib/admin.functions";
 import {
   useSiteConfig, siteConfigKey, channelCategories, youtubeIdFrom,
+  useHiddenMovies, hiddenMoviesKey,
   siteFonts, designColorFields, defaultTexts, defaultContacts, defaultDesign, defaultAd, defaultTicker, defaultChat, type SiteTexts, safeLibraryLink, safeHttpsImage, type SiteContacts, type SiteDesign, type SiteAd, type SiteTicker,
 } from "@/lib/site-config";
 
@@ -87,7 +88,10 @@ function AdminPage() {
 
 function useRefresh() {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ queryKey: siteConfigKey });
+  return () => {
+    qc.invalidateQueries({ queryKey: siteConfigKey });
+    qc.invalidateQueries({ queryKey: hiddenMoviesKey });
+  };
 }
 
 function ChannelsTab() {
@@ -167,7 +171,7 @@ function MoviesTab() {
   const check = useServerFn(checkStreamUrl);
   const [form, setForm] = useState({ url: "", title: "", description: "" });
   const [msg, setMsg] = useState("");
-  const hidden = new Set(data?.hiddenMovies ?? []);
+  const hidden = new Set(useHiddenMovies().data ?? []);
   async function add(e: React.FormEvent) {
     e.preventDefault(); setMsg("");
     const id = youtubeIdFrom(form.url.trim());
@@ -372,10 +376,11 @@ function OverviewTab() {
   const members = useQuery({ queryKey: ["admin-members"], queryFn: () => fetchMembers() });
   const chat = useQuery({ queryKey: ["admin-chat-count"], queryFn: async () => (await supabase.from("chat_messages").select("id", { count: "exact", head: true })).count ?? 0 });
   const hiddenCh = (data?.overrides ?? []).filter((o) => o.hidden).length;
+  const hiddenFilms = (useHiddenMovies().data ?? []).length;
   const stats = [
     ["القنوات الظاهرة", baseChannels.length + (data?.customChannels.length ?? 0) - hiddenCh],
     ["القنوات المضافة", data?.customChannels.length ?? 0],
-    ["الأفلام", baseMovies.length + (data?.customMovies.length ?? 0) - (data?.hiddenMovies.length ?? 0)],
+    ["الأفلام", baseMovies.length + (data?.customMovies.length ?? 0) - hiddenFilms],
     ["الأعضاء", members.data?.length ?? "…"],
     ["الأعضاء الموقوفون", members.data?.filter((m) => m.suspended).length ?? "…"],
     ["رسائل الدردشة", chat.data ?? "…"],
