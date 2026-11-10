@@ -85,8 +85,9 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
       const done = new Promise<void>((r) => { rec.onstop = () => r(); });
       rec.start(); src.start(); src.onended = () => rec.stop();
       await done; void ctx.close();
+      const mime = type.split(";")[0] ?? "audio/mp4";
       const ext = type.includes("ogg") ? "ogg" : type.includes("mp4") ? "m4a" : "webm";
-      return new File([new Blob(chunks, { type: type.split(";")[0] })], `voice-note.${ext}`, { type: type.split(";")[0] });
+      return new File([new Blob(chunks, { type: mime })], `voice-note.${ext}`, { type: mime });
     } catch { return wav; }
   }
 
