@@ -69,25 +69,21 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
   }
 
   // Re-encode to a compressed voice-note file (opus/m4a) so chat apps treat it like a real clip.
+  // Re-encode to OGG/Opus so Telegram and WhatsApp show it as a voice note (play button + waveform).
   async function toVoiceNote(bytes: Uint8Array): Promise<File> {
     const wav = new File([bytes as BlobPart], "voice-note.wav", { type: "audio/wav" });
     try {
-      const types = ["audio/ogg;codecs=opus", "audio/mp4", "audio/webm;codecs=opus"];
-      const type = types.find((t) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(t));
-      if (!type) return wav;
       const ctx = new AudioContext();
       const buf = await ctx.decodeAudioData(bytes.slice().buffer as ArrayBuffer);
-      const dest = ctx.createMediaStreamDestination();
-      const src = ctx.createBufferSource(); src.buffer = buf; src.connect(dest);
-      const rec = new MediaRecorder(dest.stream, { mimeType: type, audioBitsPerSecond: 32000 });
-      const chunks: Blob[] = [];
-      rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
-      const done = new Promise<void>((r) => { rec.onstop = () => r(); });
-      rec.start(); src.start(); src.onended = () => rec.stop();
-      await done; void ctx.close();
-      const mime = type.split(";")[0] ?? "audio/mp4";
-      const ext = type.includes("ogg") ? "ogg" : type.includes("mp4") ? "m4a" : "webm";
-      return new File([new Blob(chunks, { type: mime })], `voice-note.${ext}`, { type: mime });
+      void ctx.close();
+      const pcm = buf.getChannelData(0).slice();
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        const w = new Worker("/opus/ogg-worker.js");
+        w.onmessage = (e) => { w.terminate(); e.data.blob ? resolve(e.data.blob) : reject(new Error(e.data.error)); };
+        w.onerror = (e) => { w.terminate(); reject(new Error(e.message)); };
+        w.postMessage({ pcm, sampleRate: buf.sampleRate }, [pcm.buffer]);
+      });
+      return new File([blob], "voice.ogg", { type: "audio/ogg" });
     } catch { return wav; }
   }
 

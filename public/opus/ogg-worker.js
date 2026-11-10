@@ -1,11 +1,11 @@
 // Encodes mono Float32 PCM into an OGG/Opus voice note (Telegram/WhatsApp voice-message format).
 self.OPUS_SCRIPT_LOCATION = "/opus/";
 importScripts("/opus/libopus-encoder.js", "/opus/oggOpusEncoder.js");
-var Lib = self.Module || self.OpusEncoderLib;
+var Lib = self.OpusEncoderLib;
 function ready() {
   return new Promise(function (r) {
     if (Lib.isReady) return r();
-    var t = setInterval(function () { if (Lib.isReady || Lib._opus_encoder_create && Lib.HEAPU8) { clearInterval(t); r(); } }, 30);
+    var t = setInterval(function () { if (Lib.isReady) { clearInterval(t); r(); } }, 30);
   });
 }
 onmessage = async function (e) {
