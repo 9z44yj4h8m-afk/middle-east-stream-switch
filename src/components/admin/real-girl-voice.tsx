@@ -70,13 +70,13 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
 
   // Re-encode to a compressed voice-note file (opus/m4a) so chat apps treat it like a real clip.
   async function toVoiceNote(bytes: Uint8Array): Promise<File> {
-    const wav = new File([bytes], "voice-note.wav", { type: "audio/wav" });
+    const wav = new File([bytes as BlobPart], "voice-note.wav", { type: "audio/wav" });
     try {
       const types = ["audio/ogg;codecs=opus", "audio/mp4", "audio/webm;codecs=opus"];
       const type = types.find((t) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(t));
       if (!type) return wav;
       const ctx = new AudioContext();
-      const buf = await ctx.decodeAudioData(bytes.slice().buffer);
+      const buf = await ctx.decodeAudioData(bytes.slice().buffer as ArrayBuffer);
       const dest = ctx.createMediaStreamDestination();
       const src = ctx.createBufferSource(); src.buffer = buf; src.connect(dest);
       const rec = new MediaRecorder(dest.stream, { mimeType: type, audioBitsPerSecond: 32000 });
