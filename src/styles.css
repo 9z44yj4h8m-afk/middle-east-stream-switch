@@ -1305,3 +1305,20 @@ body:has(.voice-studio-page) { overflow: hidden; }
 }
 @media(max-width:374px) { .live-reference-wrap { padding-inline:12px; }.live-reference-brand h1 { font-size:18px; }.live-reference-channel { gap:8px; padding-inline:8px; } }
 @media(prefers-reduced-motion:reduce) { .live-reference * { scroll-behavior:auto; transition:none; } }
+@media (max-width:700px) {
+  .iptv-app { min-height:100dvh; padding-bottom:calc(64px + env(safe-area-inset-bottom)); overscroll-behavior:none; }
+  .iptv-header { position:sticky; top:0; z-index:30; height:auto; min-height:52px; padding:env(safe-area-inset-top) 12px 0; background:var(--background); }
+  .iptv-wordmark small { display:none; }.iptv-wordmark strong { font-size:16px; }.iptv-wordmark > svg { width:24px; height:24px; }
+  .iptv-main { padding:0 0 8px; }
+  .iptv-page-heading { display:none; }
+  .iptv-watch { margin-bottom:10px; }
+  .iptv-screen { border:0; border-radius:0; }
+  .iptv-now { padding:8px 12px; }.iptv-now h2 { font-size:15px; margin-top:0; }.iptv-now p { margin-top:2px; }
+  .iptv-search { height:42px; margin:0 12px 10px; }
+  .iptv-filters { padding:0 12px 6px; margin-bottom:8px; }
+  .iptv-content > :not(.iptv-watch):not(.iptv-search):not(.iptv-filters) { padding-inline:12px; }
+  .iptv-channel-play { height:132px; padding:28px 6px 8px; }
+  .iptv-bottom-nav { padding:2px 4px calc(2px + env(safe-area-inset-bottom)); }
+  .iptv-bottom-nav > button { height:56px; gap:3px; font-size:10px; border-radius:0; }
+  .iptv-bottom-nav > .active { background:transparent; }
+}
