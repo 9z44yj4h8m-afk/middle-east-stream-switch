@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { RealGirlVoice } from "@/components/admin/real-girl-voice";
 
 // Real-time pitch shifter (two crossfaded delay taps) run in an AudioWorklet.
 const WORKLET = `
@@ -107,8 +108,11 @@ export function MicVoiceChanger() {
         {on && <button type="button" onClick={toggleRec} className="rounded-xl px-5 py-2.5 font-bold border border-primary text-primary">{rec ? "⏹ إيقاف التسجيل" : "⏺ سجّل"}</button>}
       </div>
       {err && <p className="text-sm text-destructive">{err}</p>}
-      {clip && <div className="space-y-2"><audio src={clip} controls className="w-full" />
+      {clip && <div className="space-y-2"><audio src={clip} controls className="w-full" />}
         <a href={clip} download="sawt-bint.m4a" className="inline-block rounded-xl px-4 py-2 text-sm border border-primary text-primary">حفظ المقطع</a></div>}
+      <div className="border-t border-border pt-3">
+        <RealGirlVoice bare />
+      </div>
     </section>
   );
 }
