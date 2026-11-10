@@ -1,11 +1,11 @@
 import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { previewVoice } from "@/lib/voice-preview.functions";
+import { micSpeak } from "@/lib/mic-voice.functions";
 import { FEMALE_VOICE_PROFILES } from "@/lib/voice-config";
 
 // Record speech → transcribe → re-speak with a real AI female voice.
 export function RealGirlVoice() {
-  const speak = useServerFn(previewVoice);
+  const speak = useServerFn(micSpeak);
   const [voice, setVoice] = useState(FEMALE_VOICE_PROFILES[0]?.id ?? "female-hessa");
   const [state, setState] = useState<"idle" | "rec" | "busy">("idle");
   const [text, setText] = useState("");
@@ -43,7 +43,7 @@ export function RealGirlVoice() {
       const said = (j.text ?? "").trim();
       if (!said) throw new Error("ما سمعت كلام واضح، جرّب مرة ثانية.");
       setText(said);
-      const { audio } = await speak({ data: { text: said, voice } });
+      const { audio } = await speak({ data: { text: said, voice, pin: "2121" } });
       const bin = atob(audio); const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
       const url = URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
