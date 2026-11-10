@@ -4,7 +4,7 @@ import { micSpeak } from "@/lib/mic-voice.functions";
 import { FEMALE_VOICE_PROFILES } from "@/lib/voice-config";
 
 // Record speech → transcribe → re-speak with a real AI female voice.
-export function RealGirlVoice() {
+export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
   const speak = useServerFn(micSpeak);
   const [voice, setVoice] = useState(FEMALE_VOICE_PROFILES[0]?.id ?? "female-hessa");
   const [state, setState] = useState<"idle" | "rec" | "busy">("idle");
@@ -55,8 +55,8 @@ export function RealGirlVoice() {
     } finally { setState("idle"); }
   }
 
-  return (
-    <section className="rounded-2xl border border-primary/40 bg-card p-4 mb-4 space-y-3" aria-label="صوت بنت حقيقي">
+  const body = (
+    <>
       <h2 className="text-lg font-bold text-primary">👩 صوت بنت حقيقي</h2>
       <p className="text-sm text-muted-foreground">اضغط سجّل وتكلم (لين 20 ثانية)، ثم وقّف. كلامك يرجع بصوت بنت حقيقي بعد ثواني.</p>
       <select value={voice} onChange={(e) => setVoice(e.target.value)} className="w-full rounded-xl border border-border bg-background text-foreground p-2">
@@ -71,6 +71,12 @@ export function RealGirlVoice() {
       {err && <p className="text-sm text-destructive">{err}</p>}
       {clip && <div className="space-y-2"><audio src={clip} controls className="w-full" />
         <a href={clip} download="sawt-bint.wav" className="inline-block rounded-xl px-4 py-2 text-sm border border-primary text-primary">حفظ المقطع</a></div>}
+    </>
+  );
+  if (bare) return <div className="space-y-3">{body}</div>;
+  return (
+    <section className="rounded-2xl border border-primary/40 bg-card p-4 mb-4 space-y-3" aria-label="صوت بنت حقيقي">
+      {body}
     </section>
   );
 }
