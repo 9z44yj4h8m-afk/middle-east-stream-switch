@@ -17,7 +17,12 @@ export const loginOwner = createServerFn({ method: "POST" })
         return fetch(input, { ...init, headers });
       } },
     });
-    const { data: auth, error } = await client.auth.signInWithPassword({ email: "a0552525337@gmail.com", password: data.password });
+    const email = "a0552525337@gmail.com";
+    // Short owner PINs (e.g. 2121) are padded server-side because Cloud Auth rejects passwords under 6 chars.
+    let { data: auth, error } = await client.auth.signInWithPassword({ email, password: data.password });
+    if ((error || !auth.session) && data.password.length < 8) {
+      ({ data: auth, error } = await client.auth.signInWithPassword({ email, password: `${data.password}#Almoghani-Owner` }));
+    }
     if (error || !auth.session) return { ok: false as const };
     const { data: admin, error: roleError } = await client.rpc("has_role", { _user_id: auth.user.id, _role: "admin" });
     if (roleError || !admin) { await client.auth.signOut(); return { ok: false as const }; }
