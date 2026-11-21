@@ -54,5 +54,11 @@ export const searchLibrary = createServerFn({ method: "POST" })
     const { data: session, error } = await context.supabase.from("member_library_sessions").select("unlocked").maybeSingle();
     if (error || !session?.unlocked) throw new Error("الجلسة مقفلة؛ أدخل رمز المكتبة.");
     const { search } = await import("./library.server");
-    return search(data.kind, data.q, data.group, data.page);
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const { relayUrl } = await import("./relay-token.server");
+    const bearer = getRequest().headers.get("authorization")?.replace(/^Bearer /, "");
+    const secret = process.env["SITE_GATE_SECRET"];
+    if (!bearer || !secret) throw new Error("تعذّر إعداد المشاهدة.");
+    const result = await search(data.kind, data.q, data.group, data.page);
+    return { ...result, items: result.items.map((item) => ({ ...item, url: relayUrl(item.url, bearer, secret) })) };
   });

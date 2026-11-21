@@ -30,7 +30,8 @@
 - Ship the site as an installable web app via public/manifest.webmanifest (start_url /vip) with no service worker, so installs never serve stale cached files.
 - Relay streams whose CDN demands a specific Referer through /api/public/hls (host allow-list, playlists rewritten), because browsers cannot set Referer.
 - Build the featured-movies list server-side from official YouTube channel searches (getFeaturedMovies, 1h cache, full-length filter) with the hand-picked list in src/lib/movies.ts as fallback.
-- Keep the private IPTV library as one responsive Smarters-style interface with server-side search and external-player actions; group series episodes by series title and live channels by stream group before listing individual items, and support movie group/search deep links from homepage collections.
+- Keep the private IPTV library as one responsive Smarters-style interface with server-side search and in-site playback; group series episodes by series title and live channels by stream group before listing individual items, and support movie group/search deep links from homepage collections.
+- Private playback uses encrypted relay capabilities containing the member JWT; recheck JWT and session-unlock RLS per request, conceal provider URLs, validate redirects, and rewrite HLS dependencies so browsers can play HTTP subscriptions safely over HTTPS.
 
 - Persist member names in profiles and gate all private stream reads with authenticated, JWT-session-scoped unlock rows; a separate public Smarters catalog exposes only channel names and groups, never URLs, provider IDs or credential-bearing logos.
 - Keep featured subscription metadata separate from public streams and resolve library matches server-side; detail pages must never substitute unrelated channels or fabricate schedules.

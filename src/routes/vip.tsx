@@ -5,7 +5,6 @@ import {
   ArrowRight,
   ChevronLeft,
   Clapperboard,
-  Copy,
   Film,
   Lock,
   Play,
@@ -17,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { MemberLibraryGate } from "@/components/member-library-gate";
 import { getLibraryGroups, getLibraryTitles, searchLibrary } from "@/lib/iptv/library.functions";
 import { SmartersCatalog } from "@/components/smarters-catalog";
+import { SmartersPlayer } from "@/components/smarters-player";
 
 export const Route = createFileRoute("/vip")({
   validateSearch: (search: Record<string, unknown>): { kind?: string | undefined; group?: string | undefined; q?: string | undefined } => ({ kind: typeof search["kind"] === "string" ? search["kind"] : undefined, group: typeof search["group"] === "string" ? search["group"] : undefined, q: typeof search["q"] === "string" ? search["q"] : undefined }),
@@ -143,7 +143,6 @@ function VipPage({ initialGroup, onCatalog }: { initialGroup?: string | undefine
 
   const activeTab = TABS.find((tab) => tab.k === kind) ?? TABS[0];
   if (!activeTab) return null;
-  const copy = (url: string) => navigator.clipboard.writeText(url).then(() => alert("تم نسخ الرابط"));
   const openLibrary = (nextKind: Kind) => {
     setKind(nextKind);
     setGroup("");
@@ -389,7 +388,7 @@ function VipPage({ initialGroup, onCatalog }: { initialGroup?: string | undefine
 
       {playing && (
         <div className="fixed inset-0 z-[70] grid place-items-end bg-background/85 backdrop-blur-sm sm:place-items-center" onClick={() => setPlaying(null)}>
-          <section className="w-full max-w-md rounded-t-lg border border-border bg-card p-5 shadow-2xl sm:rounded-lg" onClick={(event) => event.stopPropagation()} aria-modal="true" role="dialog" aria-label={playing.name}>
+          <section className="max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-t-lg border border-border bg-card p-4 shadow-2xl sm:rounded-lg sm:p-5" onClick={(event) => event.stopPropagation()} aria-modal="true" role="dialog" aria-label={playing.name}>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-xs font-bold text-accent">جاهز للمشاهدة</p>
@@ -403,23 +402,7 @@ function VipPage({ initialGroup, onCatalog }: { initialGroup?: string | undefine
             <a href="https://almoghani.net" className="mt-3 flex items-center gap-1 text-xs font-bold text-primary" dir="ltr">
               almoghani.net <ChevronLeft className="h-3 w-3" />
             </a>
-            <div className="mt-5 grid gap-2">
-              <p className="rounded-lg border border-border bg-secondary/40 p-3 text-xs leading-6 text-muted-foreground">سيرفر المزوّد يمنع التشغيل داخل المتصفح، شغّل الفيلم أو القناة في تطبيق VLC (أندرويد وآيفون) أو Outplayer (آيفون).</p>
-              <Button type="button" size="lg" className="h-12 w-full" onClick={() => {
-                const u = playing.url;
-                window.location.href = /android/i.test(navigator.userAgent)
-                  ? `intent:${u}#Intent;package=org.videolan.vlc;type=video/*;S.title=${encodeURIComponent(playing.name)};end`
-                  : `vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(u)}`;
-              }}>
-                <Play className="h-4 w-4" /> تشغيل في VLC
-              </Button>
-              <Button type="button" variant="outline" size="lg" className="h-12 w-full" onClick={() => { window.location.href = `outplayer://${playing.url}`; }}>
-                <Play className="h-4 w-4" /> تشغيل في Outplayer (آيفون)
-              </Button>
-              <Button type="button" variant="ghost" size="lg" className="h-12 w-full" onClick={() => copy(playing.url)}>
-                <Copy className="h-4 w-4" /> نسخ رابط البث
-              </Button>
-            </div>
+            <SmartersPlayer key={playing.url} url={playing.url} name={playing.name} />
           </section>
         </div>
       )}

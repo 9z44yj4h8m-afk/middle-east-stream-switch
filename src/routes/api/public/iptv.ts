@@ -1,71 +1,69 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createHmac, timingSafeEqual } from "crypto";
 
-// Relays the private IPTV provider over HTTPS so the in-site player works (provider is HTTP-only).
-// Entry URLs must be on the provider host; nested URLs (after redirects) must carry a server signature,
-// so this can never act as an open proxy.
-const PROVIDER_HOST = "ebh48.top";
-const KEY = "almoghani-iptv-relay-425912890502";
-
-const CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, OPTIONS" };
-
-const sign = (u: string) => createHmac("sha256", KEY).update(u).digest("hex").slice(0, 32);
-const proxied = (u: string) => `/api/public/iptv?u=${encodeURIComponent(u)}&s=${sign(u)}`;
-
-function allowed(target: URL, s: string | null) {
-  if (target.protocol !== "http:" && target.protocol !== "https:") return false;
-  if (target.hostname === PROVIDER_HOST) return true;
-  if (!s) return false;
-  const a = Buffer.from(sign(target.toString()));
-  const b = Buffer.from(s);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
+const responseHeaders = { "cache-control": "no-store", "referrer-policy": "no-referrer" };
+const failure = (message: string, status: number) => new Response(message, { status, headers: responseHeaders });
 
 export const Route = createFileRoute("/api/public/iptv")({
   server: {
     handlers: {
-      OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
       GET: async ({ request }) => {
-        const params = new URL(request.url).searchParams;
-        let target: URL;
+        const { openRelayToken, relayUrl, safeRelayTarget } = await import("@/lib/iptv/relay-token.server");
+        const secret = process.env["SITE_GATE_SECRET"];
+        const url = process.env["SUPABASE_URL"];
+        const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+        if (!secret || !url || !key) return failure("المشاهدة غير متاحة مؤقتًا.", 503);
+        let grant;
         try {
-          target = new URL(params.get("u") ?? "");
-        } catch {
-          return new Response("Bad url", { status: 400, headers: CORS });
-        }
-        if (!allowed(target, params.get("s"))) return new Response("Not allowed", { status: 403, headers: CORS });
-
-        const headers: Record<string, string> = { "User-Agent": "VLC/3.0.20 LibVLC/3.0.20" };
+          grant = openRelayToken(new URL(request.url).searchParams.get("t") ?? "", secret);
+        } catch { return failure("سجّل الدخول لفتح المشاهدة.", 401); }
+        const { createClient } = await import("@supabase/supabase-js");
+        const client = createClient(url, key, {
+          auth: { persistSession: false, autoRefreshToken: false },
+          global: { headers: { apikey: key, Authorization: `Bearer ${grant.bearer}` } },
+        });
+        const claims = await client.auth.getClaims(grant.bearer);
+        if (claims.error || !claims.data?.claims.sub) return failure("انتهت جلسة الدخول.", 401);
+        const { data: session, error } = await client.from("member_library_sessions").select("unlocked").maybeSingle();
+        if (error || !session?.unlocked) return failure("الجلسة مقفلة؛ افتح المكتبة أولًا.", 403);
+        let target = new URL(grant.url);
+        const headers = new Headers({ "User-Agent": "VLC/3.0.20 LibVLC/3.0.20" });
         const range = request.headers.get("range");
-        if (range) headers["Range"] = range;
-        const upstream = await fetch(target.toString(), { headers, redirect: "follow" });
-        if (!upstream.ok && upstream.status !== 206) {
-          return new Response("Upstream error", { status: upstream.status, headers: CORS });
-        }
-        const base = new URL(upstream.url || target.toString());
-        const type = upstream.headers.get("content-type") ?? "";
-        const isPlaylist = base.pathname.endsWith(".m3u8") || type.includes("mpegurl");
-
-        if (isPlaylist) {
-          const text = await upstream.text();
-          const out = text
-            .split("\n")
-            .map((line) => {
-              const t = line.trim();
-              if (!t) return line;
-              if (t.startsWith("#")) return line.replace(/URI="([^"]+)"/g, (_m, u) => `URI="${proxied(new URL(u, base).toString())}"`);
-              return proxied(new URL(t, base).toString());
-            })
-            .join("\n");
-          return new Response(out, { headers: { ...CORS, "content-type": "application/vnd.apple.mpegurl", "cache-control": "no-store" } });
-        }
-
-        const h: Record<string, string> = { ...CORS, "content-type": type || "video/mp2t", "accept-ranges": "bytes" };
-        for (const k of ["content-length", "content-range"]) {
-          const v = upstream.headers.get(k);
-          if (v) h[k] = v;
-        }
-        return new Response(upstream.body, { status: upstream.status, headers: h });
+        if (range) headers.set("Range", range);
+        try {
+          let upstream: Response | undefined;
+          for (let hop = 0; hop < 6; hop++) {
+            if (!safeRelayTarget(target)) return failure("عنوان البث غير مسموح.", 403);
+            upstream = await fetch(target, { headers, redirect: "manual", signal: AbortSignal.timeout(20000) });
+            if (upstream.status < 300 || upstream.status >= 400) break;
+            const location = upstream.headers.get("location");
+            await upstream.body?.cancel();
+            if (!location || hop === 5) return failure("تعذّر الوصول للبث.", 502);
+            target = new URL(location, target);
+          }
+          if (!upstream?.ok) return failure("مزوّد الاشتراك رفض تشغيل البث داخل الموقع.", 502);
+          const type = upstream.headers.get("content-type") ?? "";
+          if (target.pathname.endsWith(".m3u8") || type.includes("mpegurl")) {
+            const text = await upstream.text();
+            if (!text.trimStart().startsWith("#EXTM3U")) return failure("المزوّد لم يُرسل بثًا صالحًا.", 502);
+            const wrap = (value: string) => {
+              const next = new URL(value, target);
+              if (!safeRelayTarget(next)) throw new Error("Invalid target");
+              return relayUrl(next.toString(), grant.bearer, secret);
+            };
+            const playlist = text.split("\n").map((line) => {
+              if (!line.trim()) return line;
+              return line.startsWith("#") ? line.replace(/URI="([^"]+)"/g, (_match, value: string) => `URI="${wrap(value)}"`) : wrap(line.trim());
+            }).join("\n");
+            return new Response(playlist, { headers: { ...responseHeaders, "content-type": "application/vnd.apple.mpegurl" } });
+          }
+          if (type.includes("text/html") || type.includes("application/json")) return failure("المزوّد لم يُرسل فيديو.", 502);
+          const outgoing = new Headers({ ...responseHeaders, "content-type": type || "video/mp2t", "accept-ranges": "bytes" });
+          for (const name of ["content-length", "content-range"]) {
+            const value = upstream.headers.get(name);
+            if (value) outgoing.set(name, value);
+          }
+          return new Response(upstream.body, { status: upstream.status, headers: outgoing });
+        } catch { return failure("تعذّر الاتصال بمزوّد الاشتراك.", 502); }
       },
     },
   },
