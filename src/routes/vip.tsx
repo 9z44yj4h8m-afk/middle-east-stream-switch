@@ -17,6 +17,7 @@ import { MemberLibraryGate } from "@/components/member-library-gate";
 import { getLibraryGroups, getLibraryTitles, searchLibrary } from "@/lib/iptv/library.functions";
 import { SmartersCatalog } from "@/components/smarters-catalog";
 import { SmartersPlayer } from "@/components/smarters-player";
+import { IptvApp } from "@/components/iptv-app";
 
 export const Route = createFileRoute("/vip")({
   validateSearch: (search: Record<string, unknown>): { kind?: string | undefined; group?: string | undefined; q?: string | undefined } => ({ kind: typeof search["kind"] === "string" ? search["kind"] : undefined, group: typeof search["group"] === "string" ? search["group"] : undefined, q: typeof search["q"] === "string" ? search["q"] : undefined }),
@@ -28,15 +29,16 @@ export const Route = createFileRoute("/vip")({
       { property: "og:description", content: "قنوات سمارتر مرتبة حسب التصنيف؛ المشاهدة للأعضاء." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "robots", content: "noindex" },
-    ],
+          ],
   }),
   component: SmartersPage,
 });
 
 function SmartersPage() {
-  const { kind } = Route.useSearch();
+  const { kind, group, q } = Route.useSearch();
   const [watchGroup, setWatchGroup] = useState<string | null>(null);
+  // Bare /vip opens the public channels for everyone, exactly like /iptv.
+  if (!kind && !group && !q && watchGroup === null) return <IptvApp view="live" />;
   if (watchGroup !== null || kind === "movie" || kind === "series") return <MemberLibraryGate><VipPage initialGroup={watchGroup ?? undefined} onCatalog={() => setWatchGroup(null)} /></MemberLibraryGate>;
   return <SmartersCatalog onMemberWatch={setWatchGroup} />;
 }
