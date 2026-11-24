@@ -12,8 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as R100RouteImport } from './routes/100'
 import { Route as R22RouteImport } from './routes/22'
+import { Route as ARouteImport } from './routes/a'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminChatRouteImport } from './routes/admin-chat'
+import { Route as AhmedRouteImport } from './routes/ahmed'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BedouinDramaRouteImport } from './routes/bedouin-drama'
@@ -36,6 +38,7 @@ import { Route as SubscriptionRouteImport } from './routes/subscription'
 import { Route as UnlockRouteImport } from './routes/unlock'
 import { Route as VipRouteImport } from './routes/vip'
 import { Route as VoiceChatRouteImport } from './routes/voice-chat'
+import { Route as YoutubeRouteImport } from './routes/youtube'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ChannelsSectionRouteImport } from './routes/channels.$section'
 import { Route as FeaturedIndexRouteImport } from './routes/featured.index'
@@ -63,6 +66,11 @@ const R22Route = R22RouteImport.update({
   path: '/22',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ARoute = ARouteImport.update({
+  id: '/a',
+  path: '/a',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -71,6 +79,11 @@ const AdminRoute = AdminRouteImport.update({
 const AdminChatRoute = AdminChatRouteImport.update({
   id: '/admin-chat',
   path: '/admin-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AhmedRoute = AhmedRouteImport.update({
+  id: '/ahmed',
+  path: '/ahmed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -183,6 +196,11 @@ const VoiceChatRoute = VoiceChatRouteImport.update({
   path: '/voice-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const YoutubeRoute = YoutubeRouteImport.update({
+  id: '/youtube',
+  path: '/youtube',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
@@ -244,8 +262,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/100': typeof R100Route
   '/22': typeof R22Route
+  '/a': typeof ARoute
   '/admin': typeof AdminRoute
   '/admin-chat': typeof AdminChatRoute
+  '/ahmed': typeof AhmedRoute
   '/app': typeof AppRoute
   '/auth': typeof AuthRoute
   '/bedouin-drama': typeof BedouinDramaRoute
@@ -268,6 +288,7 @@ export interface FileRoutesByFullPath {
   '/unlock': typeof UnlockRoute
   '/vip': typeof VipRoute
   '/voice-chat': typeof VoiceChatRoute
+  '/youtube': typeof YoutubeRoute
   '/api/chat': typeof ApiChatRoute
   '/channels/$section': typeof ChannelsSectionRoute
   '/featured/$channel': typeof FeaturedChannelRoute
@@ -284,8 +305,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/100': typeof R100Route
   '/22': typeof R22Route
+  '/a': typeof ARoute
   '/admin': typeof AdminRoute
   '/admin-chat': typeof AdminChatRoute
+  '/ahmed': typeof AhmedRoute
   '/app': typeof AppRoute
   '/auth': typeof AuthRoute
   '/bedouin-drama': typeof BedouinDramaRoute
@@ -308,6 +331,7 @@ export interface FileRoutesByTo {
   '/unlock': typeof UnlockRoute
   '/vip': typeof VipRoute
   '/voice-chat': typeof VoiceChatRoute
+  '/youtube': typeof YoutubeRoute
   '/api/chat': typeof ApiChatRoute
   '/channels/$section': typeof ChannelsSectionRoute
   '/featured/$channel': typeof FeaturedChannelRoute
@@ -325,8 +349,10 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/100': typeof R100Route
   '/22': typeof R22Route
+  '/a': typeof ARoute
   '/admin': typeof AdminRoute
   '/admin-chat': typeof AdminChatRoute
+  '/ahmed': typeof AhmedRoute
   '/app': typeof AppRoute
   '/auth': typeof AuthRoute
   '/bedouin-drama': typeof BedouinDramaRoute
@@ -349,6 +375,7 @@ export interface FileRoutesById {
   '/unlock': typeof UnlockRoute
   '/vip': typeof VipRoute
   '/voice-chat': typeof VoiceChatRoute
+  '/youtube': typeof YoutubeRoute
   '/api/chat': typeof ApiChatRoute
   '/channels/$section': typeof ChannelsSectionRoute
   '/featured/$channel': typeof FeaturedChannelRoute
@@ -367,8 +394,10 @@ export interface FileRouteTypes {
     | '/'
     | '/100'
     | '/22'
+    | '/a'
     | '/admin'
     | '/admin-chat'
+    | '/ahmed'
     | '/app'
     | '/auth'
     | '/bedouin-drama'
@@ -391,6 +420,7 @@ export interface FileRouteTypes {
     | '/unlock'
     | '/vip'
     | '/voice-chat'
+    | '/youtube'
     | '/api/chat'
     | '/channels/$section'
     | '/featured/$channel'
@@ -407,8 +437,10 @@ export interface FileRouteTypes {
     | '/'
     | '/100'
     | '/22'
+    | '/a'
     | '/admin'
     | '/admin-chat'
+    | '/ahmed'
     | '/app'
     | '/auth'
     | '/bedouin-drama'
@@ -431,6 +463,7 @@ export interface FileRouteTypes {
     | '/unlock'
     | '/vip'
     | '/voice-chat'
+    | '/youtube'
     | '/api/chat'
     | '/channels/$section'
     | '/featured/$channel'
@@ -447,8 +480,10 @@ export interface FileRouteTypes {
     | '/'
     | '/100'
     | '/22'
+    | '/a'
     | '/admin'
     | '/admin-chat'
+    | '/ahmed'
     | '/app'
     | '/auth'
     | '/bedouin-drama'
@@ -471,6 +506,7 @@ export interface FileRouteTypes {
     | '/unlock'
     | '/vip'
     | '/voice-chat'
+    | '/youtube'
     | '/api/chat'
     | '/channels/$section'
     | '/featured/$channel'
@@ -488,8 +524,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   R100Route: typeof R100Route
   R22Route: typeof R22Route
+  ARoute: typeof ARoute
   AdminRoute: typeof AdminRoute
   AdminChatRoute: typeof AdminChatRoute
+  AhmedRoute: typeof AhmedRoute
   AppRoute: typeof AppRoute
   AuthRoute: typeof AuthRoute
   BedouinDramaRoute: typeof BedouinDramaRoute
@@ -512,6 +550,7 @@ export interface RootRouteChildren {
   UnlockRoute: typeof UnlockRoute
   VipRoute: typeof VipRoute
   VoiceChatRoute: typeof VoiceChatRoute
+  YoutubeRoute: typeof YoutubeRoute
   ApiChatRoute: typeof ApiChatRoute
   ChannelsSectionRoute: typeof ChannelsSectionRoute
   FeaturedChannelRoute: typeof FeaturedChannelRoute
@@ -548,6 +587,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof R22RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/a': {
+      id: '/a'
+      path: '/a'
+      fullPath: '/a'
+      preLoaderRoute: typeof ARouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -560,6 +606,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-chat'
       fullPath: '/admin-chat'
       preLoaderRoute: typeof AdminChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ahmed': {
+      id: '/ahmed'
+      path: '/ahmed'
+      fullPath: '/ahmed'
+      preLoaderRoute: typeof AhmedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -716,6 +769,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VoiceChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/youtube': {
+      id: '/youtube'
+      path: '/youtube'
+      fullPath: '/youtube'
+      preLoaderRoute: typeof YoutubeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/chat': {
       id: '/api/chat'
       path: '/api/chat'
@@ -800,8 +860,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R100Route: R100Route,
   R22Route: R22Route,
+  ARoute: ARoute,
   AdminRoute: AdminRoute,
   AdminChatRoute: AdminChatRoute,
+  AhmedRoute: AhmedRoute,
   AppRoute: AppRoute,
   AuthRoute: AuthRoute,
   BedouinDramaRoute: BedouinDramaRoute,
@@ -824,6 +886,7 @@ const rootRouteChildren: RootRouteChildren = {
   UnlockRoute: UnlockRoute,
   VipRoute: VipRoute,
   VoiceChatRoute: VoiceChatRoute,
+  YoutubeRoute: YoutubeRoute,
   ApiChatRoute: ApiChatRoute,
   ChannelsSectionRoute: ChannelsSectionRoute,
   FeaturedChannelRoute: FeaturedChannelRoute,
