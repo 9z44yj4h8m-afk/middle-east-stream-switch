@@ -17,6 +17,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminChatRouteImport } from './routes/admin-chat'
 import { Route as AhmedRouteImport } from './routes/ahmed'
 import { Route as AiRouteImport } from './routes/ai'
+import { Route as Ai1RouteImport } from './routes/ai1'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BedouinDramaRouteImport } from './routes/bedouin-drama'
@@ -44,6 +45,7 @@ import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ChannelsSectionRouteImport } from './routes/channels.$section'
 import { Route as FeaturedIndexRouteImport } from './routes/featured.index'
 import { Route as FeaturedChannelRouteImport } from './routes/featured.$channel'
+import { Route as ApiPublicAiChatRouteImport } from './routes/api/public/ai-chat'
 import { Route as ApiPublicBotAvatarRouteImport } from './routes/api/public/bot-avatar'
 import { Route as ApiPublicBotVoiceRouteImport } from './routes/api/public/bot-voice'
 import { Route as ApiPublicBotVoiceTurnRouteImport } from './routes/api/public/bot-voice-turn'
@@ -90,6 +92,11 @@ const AhmedRoute = AhmedRouteImport.update({
 const AiRoute = AiRouteImport.update({
   id: '/ai',
   path: '/ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Ai1Route = Ai1RouteImport.update({
+  id: '/ai1',
+  path: '/ai1',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -227,6 +234,11 @@ const FeaturedChannelRoute = FeaturedChannelRouteImport.update({
   path: '/featured/$channel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAiChatRoute = ApiPublicAiChatRouteImport.update({
+  id: '/api/public/ai-chat',
+  path: '/api/public/ai-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBotAvatarRoute = ApiPublicBotAvatarRouteImport.update({
   id: '/api/public/bot-avatar',
   path: '/api/public/bot-avatar',
@@ -273,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/admin-chat': typeof AdminChatRoute
   '/ahmed': typeof AhmedRoute
   '/ai': typeof AiRoute
+  '/ai1': typeof Ai1Route
   '/app': typeof AppRoute
   '/auth': typeof AuthRoute
   '/bedouin-drama': typeof BedouinDramaRoute
@@ -300,6 +313,7 @@ export interface FileRoutesByFullPath {
   '/channels/$section': typeof ChannelsSectionRoute
   '/featured/$channel': typeof FeaturedChannelRoute
   '/featured/': typeof FeaturedIndexRoute
+  '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/bot-avatar': typeof ApiPublicBotAvatarRoute
   '/api/public/bot-voice': typeof ApiPublicBotVoiceRoute
   '/api/public/bot-voice-turn': typeof ApiPublicBotVoiceTurnRoute
@@ -317,6 +331,7 @@ export interface FileRoutesByTo {
   '/admin-chat': typeof AdminChatRoute
   '/ahmed': typeof AhmedRoute
   '/ai': typeof AiRoute
+  '/ai1': typeof Ai1Route
   '/app': typeof AppRoute
   '/auth': typeof AuthRoute
   '/bedouin-drama': typeof BedouinDramaRoute
@@ -344,6 +359,7 @@ export interface FileRoutesByTo {
   '/channels/$section': typeof ChannelsSectionRoute
   '/featured/$channel': typeof FeaturedChannelRoute
   '/featured': typeof FeaturedIndexRoute
+  '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/bot-avatar': typeof ApiPublicBotAvatarRoute
   '/api/public/bot-voice': typeof ApiPublicBotVoiceRoute
   '/api/public/bot-voice-turn': typeof ApiPublicBotVoiceTurnRoute
@@ -362,6 +378,7 @@ export interface FileRoutesById {
   '/admin-chat': typeof AdminChatRoute
   '/ahmed': typeof AhmedRoute
   '/ai': typeof AiRoute
+  '/ai1': typeof Ai1Route
   '/app': typeof AppRoute
   '/auth': typeof AuthRoute
   '/bedouin-drama': typeof BedouinDramaRoute
@@ -389,6 +406,7 @@ export interface FileRoutesById {
   '/channels/$section': typeof ChannelsSectionRoute
   '/featured/$channel': typeof FeaturedChannelRoute
   '/featured/': typeof FeaturedIndexRoute
+  '/api/public/ai-chat': typeof ApiPublicAiChatRoute
   '/api/public/bot-avatar': typeof ApiPublicBotAvatarRoute
   '/api/public/bot-voice': typeof ApiPublicBotVoiceRoute
   '/api/public/bot-voice-turn': typeof ApiPublicBotVoiceTurnRoute
@@ -408,6 +426,7 @@ export interface FileRouteTypes {
     | '/admin-chat'
     | '/ahmed'
     | '/ai'
+    | '/ai1'
     | '/app'
     | '/auth'
     | '/bedouin-drama'
@@ -435,6 +454,7 @@ export interface FileRouteTypes {
     | '/channels/$section'
     | '/featured/$channel'
     | '/featured/'
+    | '/api/public/ai-chat'
     | '/api/public/bot-avatar'
     | '/api/public/bot-voice'
     | '/api/public/bot-voice-turn'
@@ -452,6 +472,7 @@ export interface FileRouteTypes {
     | '/admin-chat'
     | '/ahmed'
     | '/ai'
+    | '/ai1'
     | '/app'
     | '/auth'
     | '/bedouin-drama'
@@ -479,6 +500,7 @@ export interface FileRouteTypes {
     | '/channels/$section'
     | '/featured/$channel'
     | '/featured'
+    | '/api/public/ai-chat'
     | '/api/public/bot-avatar'
     | '/api/public/bot-voice'
     | '/api/public/bot-voice-turn'
@@ -496,6 +518,7 @@ export interface FileRouteTypes {
     | '/admin-chat'
     | '/ahmed'
     | '/ai'
+    | '/ai1'
     | '/app'
     | '/auth'
     | '/bedouin-drama'
@@ -523,6 +546,7 @@ export interface FileRouteTypes {
     | '/channels/$section'
     | '/featured/$channel'
     | '/featured/'
+    | '/api/public/ai-chat'
     | '/api/public/bot-avatar'
     | '/api/public/bot-voice'
     | '/api/public/bot-voice-turn'
@@ -541,6 +565,7 @@ export interface RootRouteChildren {
   AdminChatRoute: typeof AdminChatRoute
   AhmedRoute: typeof AhmedRoute
   AiRoute: typeof AiRoute
+  Ai1Route: typeof Ai1Route
   AppRoute: typeof AppRoute
   AuthRoute: typeof AuthRoute
   BedouinDramaRoute: typeof BedouinDramaRoute
@@ -568,6 +593,7 @@ export interface RootRouteChildren {
   ChannelsSectionRoute: typeof ChannelsSectionRoute
   FeaturedChannelRoute: typeof FeaturedChannelRoute
   FeaturedIndexRoute: typeof FeaturedIndexRoute
+  ApiPublicAiChatRoute: typeof ApiPublicAiChatRoute
   ApiPublicBotAvatarRoute: typeof ApiPublicBotAvatarRoute
   ApiPublicBotVoiceRoute: typeof ApiPublicBotVoiceRoute
   ApiPublicBotVoiceTurnRoute: typeof ApiPublicBotVoiceTurnRoute
@@ -633,6 +659,13 @@ declare module '@tanstack/react-router' {
       path: '/ai'
       fullPath: '/ai'
       preLoaderRoute: typeof AiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai1': {
+      id: '/ai1'
+      path: '/ai1'
+      fullPath: '/ai1'
+      preLoaderRoute: typeof Ai1RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -824,6 +857,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeaturedChannelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ai-chat': {
+      id: '/api/public/ai-chat'
+      path: '/api/public/ai-chat'
+      fullPath: '/api/public/ai-chat'
+      preLoaderRoute: typeof ApiPublicAiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/bot-avatar': {
       id: '/api/public/bot-avatar'
       path: '/api/public/bot-avatar'
@@ -885,6 +925,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminChatRoute: AdminChatRoute,
   AhmedRoute: AhmedRoute,
   AiRoute: AiRoute,
+  Ai1Route: Ai1Route,
   AppRoute: AppRoute,
   AuthRoute: AuthRoute,
   BedouinDramaRoute: BedouinDramaRoute,
@@ -912,6 +953,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChannelsSectionRoute: ChannelsSectionRoute,
   FeaturedChannelRoute: FeaturedChannelRoute,
   FeaturedIndexRoute: FeaturedIndexRoute,
+  ApiPublicAiChatRoute: ApiPublicAiChatRoute,
   ApiPublicBotAvatarRoute: ApiPublicBotAvatarRoute,
   ApiPublicBotVoiceRoute: ApiPublicBotVoiceRoute,
   ApiPublicBotVoiceTurnRoute: ApiPublicBotVoiceTurnRoute,
