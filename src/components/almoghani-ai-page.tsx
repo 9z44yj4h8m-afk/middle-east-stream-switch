@@ -1,20 +1,21 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowUp, Check, Copy, Home, RotateCcw, Sparkles, Square } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { ArrowUp, Check, Copy, Home, RotateCcw, Settings, Sparkles, Square } from "lucide-react";
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent } from "react";
 
+import { AiControlPanel } from "@/components/ai-control-panel";
 import { AiMessageBody } from "@/components/ai-message-body";
 import { Button } from "@/components/ui/button";
+import {
+  contrastOnHex,
+  defaultAiPageConfig,
+  resolvedAiLogoSrc,
+  useAiPageConfig,
+  type AiPageConfig,
+} from "@/lib/ai-page-config";
 
 type ChatMessage = { id: string; role: "user" | "assistant"; content: string };
 
 const STORAGE_KEY = "almoghani_ai_chat_v1";
-
-const QUICK_PROMPTS = [
-  "اقترح لي قنوات أخبار ورياضة مباشرة",
-  "أرشدني إلى سورة الكهف",
-  "ما أبرز المسلسلات البدوية والأفلام؟",
-  "ساعدني في كتابة نص أو فكرة احترافية",
-];
 
 function loadSaved(): ChatMessage[] {
   try {
@@ -38,6 +39,14 @@ function loadSaved(): ChatMessage[] {
 }
 
 export function AlmoghaniAiPage() {
+  const { data: loadedConfig } = useAiPageConfig();
+  const savedConfig = loadedConfig ?? defaultAiPageConfig;
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [previewDraft, setPreviewDraft] = useState<AiPageConfig | null>(null);
+  const [previewLogo, setPreviewLogo] = useState("");
+  const active = previewDraft ?? savedConfig;
+  const logoSrc = previewLogo || resolvedAiLogoSrc(active);
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [input, setInput] = useState("");
@@ -183,28 +192,50 @@ export function AlmoghaniAiPage() {
     }
   }
 
+  const shellStyle = {
+    "--background": active.bgColor,
+    "--surface": active.surfaceColor,
+    "--foreground": active.textColor,
+    "--muted-foreground": active.mutedTextColor,
+    "--primary": active.accentColor,
+    "--primary-foreground": contrastOnHex(active.accentColor),
+    "--ai-heading": active.headingColor,
+    "--ai-font": `"${active.fontFamily}", sans-serif`,
+  } as CSSProperties;
+
   return (
-    <div dir="rtl" className="almoghani-ai-shell">
+    <div dir="rtl" className="almoghani-ai-shell" style={shellStyle}>
       <header className="almoghani-ai-header">
         <div className="almoghani-ai-brand">
-          <img src="/icon-192.png" alt="" className="almoghani-ai-emblem" />
+          <img src={logoSrc} alt="" className="almoghani-ai-emblem" />
           <div>
-            <strong dir="ltr">ALMOGHANI AI</strong>
-            <small>المساعد الذكي</small>
+            <strong>{active.brandTitle}</strong>
+            <small>{active.brandSubtitle}</small>
           </div>
         </div>
         <div className="almoghani-ai-actions">
           {messages.length > 0 && (
             <Button type="button" variant="outline" size="sm" onClick={startNewChat}>
               <RotateCcw />
-              <span>جديدة</span>
+              <span>{active.newChatLabel}</span>
             </Button>
           )}
           <Button asChild variant="outline" size="sm">
             <Link to="/">
               <Home />
-              <span>الرئيسية</span>
+              <span>{active.homeLabel}</span>
             </Link>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="almoghani-ai-settings-btn"
+            onClick={() => setPanelOpen(true)}
+            aria-label="إعدادات الصفحة"
+            title="إعدادات الصفحة"
+          >
+            <Settings />
           </Button>
         </div>
       </header>
@@ -213,18 +244,20 @@ export function AlmoghaniAiPage() {
         {messages.length === 0 ? (
           <section className="almoghani-ai-welcome">
             <div className="almoghani-ai-welcome-badge">
-              <img src="/icon-192.png" alt="ALMOGHANI AI" />
+              <img src={logoSrc} alt={active.welcomeTitle} />
             </div>
-            <h1 dir="ltr">ALMOGHANI AI</h1>
-            <p>اسألني عن القنوات المباشرة، الأفلام، المسلسلات البدوية، القرآن الكريم، أو أي سؤال عام.</p>
-            <div className="almoghani-ai-prompts">
-              {QUICK_PROMPTS.map((q) => (
-                <button key={q} type="button" className="almoghani-ai-prompt" onClick={() => void sendMessage(q)}>
-                  <Sparkles aria-hidden="true" />
-                  <span>{q}</span>
-                </button>
-              ))}
-            </div>
+            <h1>{active.welcomeTitle}</h1>
+            <p>{active.welcomeSubtitle}</p>
+            {active.sections.length > 0 && (
+              <div className={active.layoutStyle === "list" ? "almoghani-ai-prompts is-list" : "almoghani-ai-prompts"}>
+                {active.sections.map((sec) => (
+                  <button key={sec.id} type="button" className="almoghani-ai-prompt" onClick={() => void sendMessage(sec.prompt)}>
+                    <Sparkles aria-hidden="true" />
+                    <span>{sec.title}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </section>
         ) : (
           <div className="almoghani-ai-thread">
@@ -234,7 +267,7 @@ export function AlmoghaniAiPage() {
                   <div className="almoghani-ai-meta">
                     <span className="almoghani-ai-bot-tag">
                       <Sparkles aria-hidden="true" />
-                      <span dir="ltr">ALMOGHANI AI</span>
+                      <span>{active.brandTitle}</span>
                     </span>
                     {m.content.trim().length > 0 && !streaming && (
                       <button
@@ -284,7 +317,7 @@ export function AlmoghaniAiPage() {
               resizeInput(e.target);
             }}
             onKeyDown={handleKeyDown}
-            placeholder="اكتب سؤالك هنا…"
+            placeholder={active.inputPlaceholder}
             aria-label="اكتب سؤالك للمساعد الذكي"
             maxLength={4000}
           />
@@ -299,6 +332,16 @@ export function AlmoghaniAiPage() {
           )}
         </div>
       </form>
+
+      <AiControlPanel
+        open={panelOpen}
+        savedConfig={savedConfig}
+        onClose={() => setPanelOpen(false)}
+        onPreviewChange={(d, logo) => {
+          setPreviewDraft(d);
+          setPreviewLogo(logo);
+        }}
+      />
     </div>
   );
 }

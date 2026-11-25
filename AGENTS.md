@@ -44,4 +44,4 @@
 - Persist per-card font and size overrides alongside section content and render them through bounded, allow-listed scoped SectionCardStyle rules; preserve existing styles when no override is saved.
 - Keep Smarters banner presentation in a shared catalog component using featured-channel metadata; live banners filter public names and VOD links retain the existing member gate so artwork never exposes private streams.
 - /100 edits site_settings("voice_panel") (panel texts, colors, hidden/custom voices); custom voices store only a built-in provider ID plus delivery prompt.
-- Keep /ai as an in-site black-and-gold ALMOGHANI AI assistant backed by /api/public/almoghani-ai via @lovable.dev/ai-gateway (openai/gpt-6-astra) using the shared src/lib/channels.ts catalog.
+- Keep /ai as an in-site ALMOGHANI AI assistant backed by /api/public/almoghani-ai via @lovable.dev/ai-gateway (openai/gpt-6-astra) with a server-PIN-gated settings drawer editing site_settings("ai_page") (texts, sections, presets/layout, colors, font, logo via /api/public/ai-logo).
