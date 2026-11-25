@@ -16,6 +16,7 @@ import { Route as ARouteImport } from './routes/a'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminChatRouteImport } from './routes/admin-chat'
 import { Route as AhmedRouteImport } from './routes/ahmed'
+import { Route as AiRouteImport } from './routes/ai'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BedouinDramaRouteImport } from './routes/bedouin-drama'
@@ -84,6 +85,11 @@ const AdminChatRoute = AdminChatRouteImport.update({
 const AhmedRoute = AhmedRouteImport.update({
   id: '/ahmed',
   path: '/ahmed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AiRoute = AiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -266,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/admin-chat': typeof AdminChatRoute
   '/ahmed': typeof AhmedRoute
+  '/ai': typeof AiRoute
   '/app': typeof AppRoute
   '/auth': typeof AuthRoute
   '/bedouin-drama': typeof BedouinDramaRoute
@@ -309,6 +316,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/admin-chat': typeof AdminChatRoute
   '/ahmed': typeof AhmedRoute
+  '/ai': typeof AiRoute
   '/app': typeof AppRoute
   '/auth': typeof AuthRoute
   '/bedouin-drama': typeof BedouinDramaRoute
@@ -353,6 +361,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/admin-chat': typeof AdminChatRoute
   '/ahmed': typeof AhmedRoute
+  '/ai': typeof AiRoute
   '/app': typeof AppRoute
   '/auth': typeof AuthRoute
   '/bedouin-drama': typeof BedouinDramaRoute
@@ -398,6 +407,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-chat'
     | '/ahmed'
+    | '/ai'
     | '/app'
     | '/auth'
     | '/bedouin-drama'
@@ -441,6 +451,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-chat'
     | '/ahmed'
+    | '/ai'
     | '/app'
     | '/auth'
     | '/bedouin-drama'
@@ -484,6 +495,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-chat'
     | '/ahmed'
+    | '/ai'
     | '/app'
     | '/auth'
     | '/bedouin-drama'
@@ -528,6 +540,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AdminChatRoute: typeof AdminChatRoute
   AhmedRoute: typeof AhmedRoute
+  AiRoute: typeof AiRoute
   AppRoute: typeof AppRoute
   AuthRoute: typeof AuthRoute
   BedouinDramaRoute: typeof BedouinDramaRoute
@@ -613,6 +626,13 @@ declare module '@tanstack/react-router' {
       path: '/ahmed'
       fullPath: '/ahmed'
       preLoaderRoute: typeof AhmedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai': {
+      id: '/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -864,6 +884,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AdminChatRoute: AdminChatRoute,
   AhmedRoute: AhmedRoute,
+  AiRoute: AiRoute,
   AppRoute: AppRoute,
   AuthRoute: AuthRoute,
   BedouinDramaRoute: BedouinDramaRoute,
