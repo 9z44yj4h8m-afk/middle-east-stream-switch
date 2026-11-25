@@ -46,6 +46,7 @@ import { Route as ChannelsSectionRouteImport } from './routes/channels.$section'
 import { Route as FeaturedIndexRouteImport } from './routes/featured.index'
 import { Route as FeaturedChannelRouteImport } from './routes/featured.$channel'
 import { Route as ApiPublicAiChatRouteImport } from './routes/api/public/ai-chat'
+import { Route as ApiPublicAlmoghaniAiRouteImport } from './routes/api/public/almoghani-ai'
 import { Route as ApiPublicBotAvatarRouteImport } from './routes/api/public/bot-avatar'
 import { Route as ApiPublicBotVoiceRouteImport } from './routes/api/public/bot-voice'
 import { Route as ApiPublicBotVoiceTurnRouteImport } from './routes/api/public/bot-voice-turn'
@@ -239,6 +240,11 @@ const ApiPublicAiChatRoute = ApiPublicAiChatRouteImport.update({
   path: '/api/public/ai-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAlmoghaniAiRoute = ApiPublicAlmoghaniAiRouteImport.update({
+  id: '/api/public/almoghani-ai',
+  path: '/api/public/almoghani-ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBotAvatarRoute = ApiPublicBotAvatarRouteImport.update({
   id: '/api/public/bot-avatar',
   path: '/api/public/bot-avatar',
@@ -314,6 +320,7 @@ export interface FileRoutesByFullPath {
   '/featured/$channel': typeof FeaturedChannelRoute
   '/featured/': typeof FeaturedIndexRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
+  '/api/public/almoghani-ai': typeof ApiPublicAlmoghaniAiRoute
   '/api/public/bot-avatar': typeof ApiPublicBotAvatarRoute
   '/api/public/bot-voice': typeof ApiPublicBotVoiceRoute
   '/api/public/bot-voice-turn': typeof ApiPublicBotVoiceTurnRoute
@@ -360,6 +367,7 @@ export interface FileRoutesByTo {
   '/featured/$channel': typeof FeaturedChannelRoute
   '/featured': typeof FeaturedIndexRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
+  '/api/public/almoghani-ai': typeof ApiPublicAlmoghaniAiRoute
   '/api/public/bot-avatar': typeof ApiPublicBotAvatarRoute
   '/api/public/bot-voice': typeof ApiPublicBotVoiceRoute
   '/api/public/bot-voice-turn': typeof ApiPublicBotVoiceTurnRoute
@@ -407,6 +415,7 @@ export interface FileRoutesById {
   '/featured/$channel': typeof FeaturedChannelRoute
   '/featured/': typeof FeaturedIndexRoute
   '/api/public/ai-chat': typeof ApiPublicAiChatRoute
+  '/api/public/almoghani-ai': typeof ApiPublicAlmoghaniAiRoute
   '/api/public/bot-avatar': typeof ApiPublicBotAvatarRoute
   '/api/public/bot-voice': typeof ApiPublicBotVoiceRoute
   '/api/public/bot-voice-turn': typeof ApiPublicBotVoiceTurnRoute
@@ -455,6 +464,7 @@ export interface FileRouteTypes {
     | '/featured/$channel'
     | '/featured/'
     | '/api/public/ai-chat'
+    | '/api/public/almoghani-ai'
     | '/api/public/bot-avatar'
     | '/api/public/bot-voice'
     | '/api/public/bot-voice-turn'
@@ -501,6 +511,7 @@ export interface FileRouteTypes {
     | '/featured/$channel'
     | '/featured'
     | '/api/public/ai-chat'
+    | '/api/public/almoghani-ai'
     | '/api/public/bot-avatar'
     | '/api/public/bot-voice'
     | '/api/public/bot-voice-turn'
@@ -547,6 +558,7 @@ export interface FileRouteTypes {
     | '/featured/$channel'
     | '/featured/'
     | '/api/public/ai-chat'
+    | '/api/public/almoghani-ai'
     | '/api/public/bot-avatar'
     | '/api/public/bot-voice'
     | '/api/public/bot-voice-turn'
@@ -594,6 +606,7 @@ export interface RootRouteChildren {
   FeaturedChannelRoute: typeof FeaturedChannelRoute
   FeaturedIndexRoute: typeof FeaturedIndexRoute
   ApiPublicAiChatRoute: typeof ApiPublicAiChatRoute
+  ApiPublicAlmoghaniAiRoute: typeof ApiPublicAlmoghaniAiRoute
   ApiPublicBotAvatarRoute: typeof ApiPublicBotAvatarRoute
   ApiPublicBotVoiceRoute: typeof ApiPublicBotVoiceRoute
   ApiPublicBotVoiceTurnRoute: typeof ApiPublicBotVoiceTurnRoute
@@ -864,6 +877,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAiChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/almoghani-ai': {
+      id: '/api/public/almoghani-ai'
+      path: '/api/public/almoghani-ai'
+      fullPath: '/api/public/almoghani-ai'
+      preLoaderRoute: typeof ApiPublicAlmoghaniAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/bot-avatar': {
       id: '/api/public/bot-avatar'
       path: '/api/public/bot-avatar'
@@ -954,6 +974,7 @@ const rootRouteChildren: RootRouteChildren = {
   FeaturedChannelRoute: FeaturedChannelRoute,
   FeaturedIndexRoute: FeaturedIndexRoute,
   ApiPublicAiChatRoute: ApiPublicAiChatRoute,
+  ApiPublicAlmoghaniAiRoute: ApiPublicAlmoghaniAiRoute,
   ApiPublicBotAvatarRoute: ApiPublicBotAvatarRoute,
   ApiPublicBotVoiceRoute: ApiPublicBotVoiceRoute,
   ApiPublicBotVoiceTurnRoute: ApiPublicBotVoiceTurnRoute,

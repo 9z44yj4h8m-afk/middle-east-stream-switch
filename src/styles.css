@@ -1322,3 +1322,74 @@ body:has(.voice-studio-page) { overflow: hidden; }
   .iptv-bottom-nav > button { height:56px; gap:3px; font-size:10px; border-radius:0; }
   .iptv-bottom-nav > .active { background:transparent; }
 }
+
+/* ALMOGHANI AI dedicated black-and-gold assistant */
+.almoghani-ai-shell {
+  --background: oklch(0.095 0.004 85);
+  --surface: oklch(0.145 0.006 85);
+  --surface-deep: oklch(0.07 0.003 85);
+  --secondary: oklch(0.195 0.012 85);
+  --foreground: oklch(0.96 0.008 85);
+  --muted-foreground: oklch(0.76 0.025 85);
+  --primary: oklch(0.83 0.135 85);
+  --primary-foreground: oklch(0.11 0.01 85);
+  --border: oklch(0.68 0.11 85 / 55%);
+  --input: oklch(0.42 0.055 85 / 60%);
+  --live: oklch(0.62 0.24 20);
+  --broadcast-gradient: linear-gradient(160deg, oklch(0.91 0.125 90), oklch(0.82 0.135 85), oklch(0.68 0.125 78));
+  height:100dvh; display:flex; flex-direction:column; overflow:hidden; background:radial-gradient(ellipse at 50% -10%, color-mix(in oklab, var(--primary) 16%, transparent), transparent 52%), var(--background); color:var(--foreground);
+}
+.almoghani-ai-header { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:calc(10px + env(safe-area-inset-top)) 16px 10px; border-bottom:1px solid color-mix(in oklab, var(--border) 55%, transparent); background:color-mix(in oklab, var(--surface-deep) 88%, transparent); backdrop-filter:blur(12px); }
+.almoghani-ai-brand { display:flex; align-items:center; gap:10px; min-width:0; }
+.almoghani-ai-emblem { width:38px; height:38px; border-radius:10px; border:1px solid var(--border); object-fit:cover; flex-shrink:0; box-shadow:0 0 18px color-mix(in oklab, var(--primary) 22%, transparent); }
+.almoghani-ai-brand strong { display:block; font-family:"Outfit",sans-serif; font-size:17px; font-weight:800; color:var(--primary); line-height:1.1; letter-spacing:0.02em; }
+.almoghani-ai-brand small { display:block; font-size:11px; color:var(--muted-foreground); margin-top:2px; }
+.almoghani-ai-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.almoghani-ai-scroll { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:18px 14px 24px; }
+.almoghani-ai-welcome { max-width:620px; margin:clamp(12px, 6vh, 56px) auto 0; display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px; }
+.almoghani-ai-welcome-badge { width:84px; height:84px; padding:5px; border-radius:20px; border:1px solid var(--border); background:var(--surface); box-shadow:0 0 36px color-mix(in oklab, var(--primary) 24%, transparent); }
+.almoghani-ai-welcome-badge img { width:100%; height:100%; border-radius:15px; object-fit:cover; }
+.almoghani-ai-welcome h1 { font-family:"Outfit",sans-serif; font-size:clamp(28px, 6vw, 40px); font-weight:900; color:var(--primary); margin:4px 0 0; line-height:1.1; }
+.almoghani-ai-welcome p { max-width:460px; font-size:14px; line-height:1.7; color:var(--muted-foreground); margin:0; }
+.almoghani-ai-prompts { width:100%; display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:10px; margin-top:14px; }
+.almoghani-ai-prompt { display:flex; align-items:flex-start; gap:9px; text-align:right; padding:13px 14px; border-radius:12px; border:1px solid color-mix(in oklab, var(--border) 60%, transparent); background:var(--surface); color:var(--foreground); font-size:13px; line-height:1.5; cursor:pointer; transition:border-color 150ms ease, background 150ms ease, transform 150ms ease; }
+.almoghani-ai-prompt:hover { border-color:var(--primary); background:var(--secondary); transform:translateY(-1px); }
+.almoghani-ai-prompt svg { width:16px; height:16px; color:var(--primary); flex-shrink:0; margin-top:3px; }
+.almoghani-ai-thread { max-width:780px; margin:0 auto; display:flex; flex-direction:column; gap:16px; }
+.almoghani-ai-turn { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.almoghani-ai-turn.is-user { align-items:flex-start; }
+.almoghani-ai-turn.is-assistant { align-items:stretch; }
+.almoghani-ai-meta { display:flex; align-items:center; justify-content:space-between; gap:8px; padding-inline:4px; }
+.almoghani-ai-bot-tag { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:var(--primary); }
+.almoghani-ai-bot-tag svg { width:14px; height:14px; }
+.almoghani-ai-copy { display:inline-flex; align-items:center; gap:4px; border:0; background:transparent; color:var(--muted-foreground); font-size:11px; padding:3px 6px; border-radius:6px; cursor:pointer; }
+.almoghani-ai-copy:hover { color:var(--primary); background:var(--secondary); }
+.almoghani-ai-copy svg { width:13px; height:13px; }
+.almoghani-ai-bubble { max-width:100%; border-radius:16px; padding:12px 15px; font-size:15px; line-height:1.75; overflow-wrap:anywhere; }
+.almoghani-ai-turn.is-user .almoghani-ai-bubble { max-width:86%; background:var(--broadcast-gradient); color:var(--primary-foreground); font-weight:600; border-start-start-radius:4px; }
+.almoghani-ai-turn.is-user .almoghani-ai-bubble p { margin:0; white-space:pre-wrap; }
+.almoghani-ai-turn.is-assistant .almoghani-ai-bubble { background:var(--surface); border:1px solid color-mix(in oklab, var(--border) 55%, transparent); color:var(--foreground); border-start-end-radius:4px; }
+.almoghani-ai-prose { display:flex; flex-direction:column; gap:8px; }
+.almoghani-ai-prose p { margin:0; }
+.almoghani-ai-prose strong { color:var(--primary); font-weight:700; }
+.almoghani-ai-h { margin:6px 0 0; font-family:"Cairo",sans-serif; font-size:16px; font-weight:800; color:var(--primary); }
+.almoghani-ai-list { margin:0; padding-inline-start:20px; display:flex; flex-direction:column; gap:5px; }
+.almoghani-ai-link { display:inline-flex; align-items:center; gap:4px; margin:2px 2px; padding:2px 9px; border-radius:999px; border:1px solid var(--border); background:color-mix(in oklab, var(--primary) 12%, var(--surface-deep)); color:var(--primary); font-size:13px; font-weight:700; text-decoration:none; vertical-align:middle; }
+.almoghani-ai-link:hover { background:var(--primary); color:var(--primary-foreground); }
+.almoghani-ai-link svg { width:13px; height:13px; }
+.almoghani-ai-code-inline { padding:1px 6px; border-radius:6px; background:var(--surface-deep); border:1px solid var(--input); font-size:13px; direction:ltr; display:inline-block; }
+.almoghani-ai-code-block { margin:4px 0; padding:12px; border-radius:10px; background:var(--surface-deep); border:1px solid var(--input); overflow-x:auto; font-size:13px; line-height:1.55; }
+.almoghani-ai-dots { display:inline-flex; align-items:center; gap:5px; padding:4px 2px; }
+.almoghani-ai-dots > span { width:7px; height:7px; border-radius:50%; background:var(--primary); animation:almoghani-dot 1.1s infinite ease-in-out; }
+.almoghani-ai-dots > span:nth-child(2) { animation-delay:0.16s; }
+.almoghani-ai-dots > span:nth-child(3) { animation-delay:0.32s; }
+@keyframes almoghani-dot { 0%,80%,100% { opacity:0.25; transform:scale(0.8); } 40% { opacity:1; transform:scale(1); } }
+.almoghani-ai-error { max-width:780px; width:calc(100% - 28px); margin:0 auto 8px; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 12px; border-radius:10px; border:1px solid color-mix(in oklab, var(--live) 70%, transparent); background:color-mix(in oklab, var(--live) 14%, var(--surface-deep)); color:var(--foreground); font-size:13px; }
+.almoghani-ai-error button { border:0; background:transparent; color:var(--foreground); font-size:18px; line-height:1; cursor:pointer; padding:0 4px; }
+.almoghani-ai-composer { flex-shrink:0; padding:10px 14px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid color-mix(in oklab, var(--border) 45%, transparent); background:color-mix(in oklab, var(--surface-deep) 92%, transparent); }
+.almoghani-ai-input-wrap { max-width:780px; margin:0 auto; display:flex; align-items:flex-end; gap:8px; padding:7px 12px 7px 7px; border-radius:16px; border:1px solid var(--border); background:var(--surface); transition:border-color 150ms ease, box-shadow 150ms ease; }
+.almoghani-ai-input-wrap:focus-within { border-color:var(--primary); box-shadow:0 0 0 2px color-mix(in oklab, var(--primary) 22%, transparent); }
+.almoghani-ai-input-wrap textarea { flex:1; min-width:0; max-height:140px; resize:none; border:0; outline:0; background:transparent; color:var(--foreground); font-size:15px; line-height:1.5; padding:6px 4px; }
+.almoghani-ai-input-wrap textarea::placeholder { color:var(--muted-foreground); }
+.almoghani-ai-send { width:40px; height:40px; border-radius:12px; flex-shrink:0; }
+@media (max-width:600px) { .almoghani-ai-prompts { grid-template-columns:minmax(0, 1fr); } .almoghani-ai-header { padding-inline:12px; } .almoghani-ai-scroll { padding-inline:12px; } .almoghani-ai-composer { padding-inline:12px; } }
