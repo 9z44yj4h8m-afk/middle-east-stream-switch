@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Architecture
+- Render /bth as a full-viewport embed of the owner's live-control site; retain its original data and authentication instead of copying private records or backend credentials.
 - Keep /manage-channels as the imported dashboard shell backed by this site's existing owner login, channel panel and section editor; never copy the source project's backend or private records, so all saves update this site's shared catalogs under admin RLS.
 - Keep /iptv as a public standalone installable viewing app using public channel/movie/series catalogs and the shared LivePlayer; namespace favorites by content kind and bare /vip renders the same public IptvApp with no site/member gate, while /vip?kind=… private library deep links keep the member gate.
 - Keep /control as a standalone owner channel panel reusing password login, has_role, admin-RLS tables and shared site-config invalidation; persist last-import IDs in site_settings and count only surviving saved rows, separate unsaved previews, parse M3U with iptv-playlist-parser, fetch only allow-listed official playlists, and never import credential-bearing private IPTV into public catalogs.
