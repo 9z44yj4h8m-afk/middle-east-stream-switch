@@ -22,7 +22,7 @@ export const Route = createFileRoute("/bth")({
 const STATUS_COPY: Record<BthPlaybackState, { ar: string; code: string }> = {
   idle: { ar: "جاهز", code: "IDLE" },
   loading: { ar: "اتصال", code: "SYNC" },
-  live: { ar: "مباشر", code: "LIVE" },
+  live: { ar: "متصل", code: "ACTIVE" },
   error: { ar: "متوقف", code: "ERR" },
 };
 
@@ -83,28 +83,30 @@ function BroadcastPage() {
     setPlaybackState("idle");
   };
 
-  const broadcastHeading = stream ? `بث ${stream.label}` : "شاشتي — البث الشخصي";
+  const broadcastHeading = stream ? `بث ${stream.label}` : "استوديو البث الشخصي";
   const broadcastSubtitle = stream
     ? playbackState === "error"
       ? "تعذر تشغيل الرابط الحالي؛ أعد المحاولة أو استبدل الرابط"
-      : "رابط نشط لهذه الجلسة فقط"
-    : "استوديو البث الشخصي — الصق رابط البث للبدء";
+      : "المصدر متصل بهذه الجلسة فقط"
+    : "مساحتك الخاصة لعرض البث بجودة سينمائية وتحكم مباشر";
 
   return (
     <div className="bth-studio" dir="rtl">
       <header className="bth-topbar">
         <div className="bth-topbar-inner">
-          <div className="bth-brand">
-            <div className="bth-brand-mark" aria-hidden="true">
-              <span className="bth-brand-wave" />
-              <Radio className="h-4 w-4" />
-            </div>
-            <div className="bth-brand-text">
-              <div className="bth-wordmark" dir="ltr">
-                <span>ALMOGHANI</span>
-                <strong>LIVE</strong>
+          <div className="bth-brand-cluster">
+            <div className="bth-brand">
+              <div className="bth-brand-mark" aria-hidden="true">
+                <span className="bth-brand-wave" />
+                <Radio className="h-4 w-4" />
               </div>
-              <span className="bth-brand-sub">البث الشخصي</span>
+              <div className="bth-brand-text">
+                <div className="bth-wordmark" dir="ltr">
+                  <span>ALMOGHANI</span>
+                  <strong>LIVE</strong>
+                </div>
+                <span className="bth-brand-sub">استوديو خاص</span>
+              </div>
             </div>
             <span className="bth-status-chip" data-state={playbackState} role="status" aria-live="polite">
               <span className="bth-status-dot" aria-hidden="true" />
@@ -114,11 +116,11 @@ function BroadcastPage() {
           </div>
 
           <nav className="bth-shortcuts" aria-label="اختصارات البث">
-            <Link to="/" className="bth-shortcut-btn bth-shortcut-silver">
+            <Link to="/" className="bth-shortcut-btn bth-shortcut-silver" aria-label="معاينة الموقع" title="معاينة الموقع">
               <MonitorPlay className="h-3.5 w-3.5" />
               <span>معاينة الموقع</span>
             </Link>
-            <Link to="/admin" className="bth-shortcut-btn bth-shortcut-gold">
+            <Link to="/admin" className="bth-shortcut-btn bth-shortcut-gold" aria-label="لوحة التحكم" title="لوحة التحكم">
               <ShieldCheck className="h-3.5 w-3.5" />
               <span>لوحة التحكم</span>
             </Link>
@@ -127,23 +129,18 @@ function BroadcastPage() {
       </header>
 
       <main className="bth-main">
-        <BthPlayer
-          stream={stream}
-          refreshKey={refreshKey}
-          muted={muted}
-          onToggleMute={handleToggleMute}
-          onRefresh={handleRefresh}
-          onStateChange={setPlaybackState}
-        />
-
         <section className="bth-info-bar" aria-label="حالة البث الحالي">
           <div className="bth-info-copy">
+            <div className="bth-eyebrow" dir="ltr" aria-hidden="true">
+              <span />
+              PRIVATE BROADCAST&nbsp;&nbsp;/&nbsp;&nbsp;01
+            </div>
             <h1>{broadcastHeading}</h1>
             <p>{broadcastSubtitle}</p>
           </div>
           <div className="bth-info-actions">
             {stream && (
-              <button type="button" className="bth-ghost-btn" onClick={handleClear}>
+              <button type="button" className="bth-ghost-btn" onClick={handleClear} aria-label="إيقاف" title="إيقاف">
                 <X className="h-4 w-4" />
                 <span>إيقاف</span>
               </button>
@@ -162,13 +159,25 @@ function BroadcastPage() {
           </div>
         </section>
 
+        <BthPlayer
+          stream={stream}
+          refreshKey={refreshKey}
+          muted={muted}
+          onToggleMute={handleToggleMute}
+          onRefresh={handleRefresh}
+          onStateChange={setPlaybackState}
+        />
+
         <form onSubmit={handleSubmit} className="bth-source-panel" noValidate>
           <div className="bth-source-head">
-            <label htmlFor="bth-stream-link" className="bth-source-label">
-              <Link2 className="h-4 w-4" />
-              <span>رابط مصدر البث</span>
-            </label>
-            <span className="bth-source-hint">{activeChip?.hint}</span>
+            <div className="bth-source-title">
+              <span className="bth-source-icon" aria-hidden="true"><Link2 className="h-4 w-4" /></span>
+              <div>
+                <label htmlFor="bth-stream-link" className="bth-source-label">مصدر البث</label>
+                <span className="bth-source-hint">{activeChip?.hint}</span>
+              </div>
+            </div>
+            <span className="bth-source-code" dir="ltr" aria-hidden="true">SOURCE / INPUT</span>
           </div>
 
           <div className="bth-provider-row" role="group" aria-label="المنصات المدعومة">
@@ -195,6 +204,7 @@ function BroadcastPage() {
 
           <div className="bth-input-row">
             <div className="bth-input-wrap">
+              <Link2 className="bth-input-icon h-4 w-4" aria-hidden="true" />
               <input
                 ref={inputRef}
                 id="bth-stream-link"
@@ -241,7 +251,8 @@ function BroadcastPage() {
             </p>
           ) : (
             <p id="bth-stream-help" className="bth-form-helper">
-              يبدأ البث مكتوماً؛ شغّل الصوت من المشغل. لإدارة القنوات الرئيسية للزوار افتح لوحة التحكم.
+              <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+              يبدأ الصوت مكتوماً، ويبقى الرابط في هذه الجلسة فقط دون حفظه.
             </p>
           )}
         </form>

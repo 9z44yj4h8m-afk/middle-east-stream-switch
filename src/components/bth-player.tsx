@@ -163,13 +163,25 @@ export function BthPlayer({ stream, refreshKey, muted, onToggleMute, onRefresh, 
   };
 
   const signalLabel =
-    status === "live" ? "إشارة متصلة" : status === "loading" ? "جارٍ تحميل البث" : status === "error" ? "انقطاع الإشارة" : "بانتظار الإشارة";
+    status === "live"
+      ? stream?.kind === "embed" ? "تم تحميل المشغل" : "الإشارة متصلة"
+      : status === "loading" ? "جارٍ تحميل البث" : status === "error" ? "انقطاع الإشارة" : "بانتظار الإشارة";
 
   return (
     <section className="bth-player-card" aria-label="مشغل البث المباشر">
       <div ref={containerRef} className="bth-stage">
         {!stream && (
           <div className="bth-idle-stage">
+            <div className="bth-stage-meta" aria-hidden="true" dir="ltr">
+              <span>ALMOGHANI / STUDIO</span>
+              <span>16:9&nbsp;&nbsp;•&nbsp;&nbsp;OUTPUT</span>
+            </div>
+            <div className="bth-stage-corners" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
             <div className="bth-rings" aria-hidden="true">
               <span className="bth-ring bth-ring-1" />
               <span className="bth-ring bth-ring-2" />
@@ -178,8 +190,12 @@ export function BthPlayer({ stream, refreshKey, muted, onToggleMute, onRefresh, 
             <div className="bth-idle-emblem" aria-hidden="true">
               <Radio className="h-7 w-7" />
             </div>
-            <p className="bth-idle-title">لا يوجد بث نشط حالياً</p>
-            <p className="bth-idle-sub">الصق رابط بثك من YouTube أو Kick أو Twitch أو X بالأسفل لبدء العرض فوراً</p>
+            <span className="bth-idle-kicker" dir="ltr">STANDBY</span>
+            <p className="bth-idle-title">بانتظار مصدر البث</p>
+            <p className="bth-idle-sub">اختر المنصة والصق الرابط بالأسفل، ثم ابدأ العرض على شاشتك</p>
+            <div className="bth-waveform" aria-hidden="true">
+              {Array.from({ length: 11 }, (_, index) => <span key={index} />)}
+            </div>
           </div>
         )}
 
