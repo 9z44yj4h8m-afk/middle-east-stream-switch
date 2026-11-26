@@ -22,6 +22,7 @@ import { Route as Ai1RouteImport } from './routes/ai1'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BedouinDramaRouteImport } from './routes/bedouin-drama'
+import { Route as BthRouteImport } from './routes/bth'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ControlRouteImport } from './routes/control'
@@ -119,6 +120,11 @@ const AuthRoute = AuthRouteImport.update({
 const BedouinDramaRoute = BedouinDramaRouteImport.update({
   id: '/bedouin-drama',
   path: '/bedouin-drama',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BthRoute = BthRouteImport.update({
+  id: '/bth',
+  path: '/bth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatRoute = ChatRouteImport.update({
@@ -302,6 +308,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRoute
   '/auth': typeof AuthRoute
   '/bedouin-drama': typeof BedouinDramaRoute
+  '/bth': typeof BthRoute
   '/chat': typeof ChatRoute
   '/contact': typeof ContactRoute
   '/control': typeof ControlRoute
@@ -350,6 +357,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppRoute
   '/auth': typeof AuthRoute
   '/bedouin-drama': typeof BedouinDramaRoute
+  '/bth': typeof BthRoute
   '/chat': typeof ChatRoute
   '/contact': typeof ContactRoute
   '/control': typeof ControlRoute
@@ -399,6 +407,7 @@ export interface FileRoutesById {
   '/app': typeof AppRoute
   '/auth': typeof AuthRoute
   '/bedouin-drama': typeof BedouinDramaRoute
+  '/bth': typeof BthRoute
   '/chat': typeof ChatRoute
   '/contact': typeof ContactRoute
   '/control': typeof ControlRoute
@@ -449,6 +458,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/bedouin-drama'
+    | '/bth'
     | '/chat'
     | '/contact'
     | '/control'
@@ -497,6 +507,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/bedouin-drama'
+    | '/bth'
     | '/chat'
     | '/contact'
     | '/control'
@@ -545,6 +556,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/bedouin-drama'
+    | '/bth'
     | '/chat'
     | '/contact'
     | '/control'
@@ -594,6 +606,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRoute
   AuthRoute: typeof AuthRoute
   BedouinDramaRoute: typeof BedouinDramaRoute
+  BthRoute: typeof BthRoute
   ChatRoute: typeof ChatRoute
   ContactRoute: typeof ContactRoute
   ControlRoute: typeof ControlRoute
@@ -720,6 +733,13 @@ declare module '@tanstack/react-router' {
       path: '/bedouin-drama'
       fullPath: '/bedouin-drama'
       preLoaderRoute: typeof BedouinDramaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bth': {
+      id: '/bth'
+      path: '/bth'
+      fullPath: '/bth'
+      preLoaderRoute: typeof BthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat': {
@@ -970,6 +990,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRoute,
   AuthRoute: AuthRoute,
   BedouinDramaRoute: BedouinDramaRoute,
+  BthRoute: BthRoute,
   ChatRoute: ChatRoute,
   ContactRoute: ContactRoute,
   ControlRoute: ControlRoute,
