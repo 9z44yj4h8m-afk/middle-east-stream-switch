@@ -58,6 +58,18 @@ export const Route = createFileRoute("/api/public/almoghani-ai")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const authorization = request.headers.get("authorization");
+        if (authorization) {
+          const { createClient } = await import("@supabase/supabase-js");
+          const url = process.env["SUPABASE_URL"]; const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+          if (!url || !key) return Response.json({ error: "تعذّر التحقق من الحساب." }, { status: 503 });
+          const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: authorization } } });
+          const { data: auth, error: authError } = await client.auth.getUser(authorization.replace(/^Bearer\s+/i, ""));
+          if (authError || !auth.user) return Response.json({ error: "سجّل الدخول مجددًا." }, { status: 401 });
+          const { data: profile, error: profileError } = await client.from("profiles").select("suspended").eq("user_id", auth.user.id).maybeSingle();
+          if (profileError) return Response.json({ error: "تعذّر التحقق من الحساب." }, { status: 503 });
+          if (profile?.suspended) return Response.json({ error: "هذا الحساب معطّل؛ تواصل مع الإدارة." }, { status: 403 });
+        }
         let raw: unknown;
         try {
           raw = await request.json();

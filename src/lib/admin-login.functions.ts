@@ -1,10 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { validAiAdminUsername } from "./ai-admin-access";
 
 export const loginOwner = createServerFn({ method: "POST" })
-  .inputValidator((data) => z.object({ password: z.string().min(1).max(128) }).parse(data))
+  .inputValidator((data) => z.object({ password: z.string().min(1).max(128), username: z.string().max(80).optional() }).parse(data))
   .handler(async ({ data }) => {
+    if (!validAiAdminUsername(data.username)) return { ok: false as const };
     const url = process.env['SUPABASE_URL'];
     const key = process.env['SUPABASE_PUBLISHABLE_KEY'];
     if (!url || !key) throw new Error("تعذّر الدخول حاليًا.");

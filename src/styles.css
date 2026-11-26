@@ -1446,3 +1446,86 @@ body:has(.voice-studio-page) { overflow: hidden; }
 .ai-ctrl-footer-btns { display:flex; gap:8px; }
 .ai-ctrl-status { margin:0; text-align:center; font-size:13px; font-weight:700; color:var(--primary); }
 @media (max-width:480px) { .ai-ctrl-grid, .ai-ctrl-presets { grid-template-columns:minmax(0, 1fr); } .ai-ctrl-colors { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
+
+/* AI workspace: shared semantic theme, independent from the broadcast shell. */
+.ai-workspace-nav { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:12px 18px; border-bottom:1px solid var(--border); background:color-mix(in oklab,var(--surface) 70%,transparent); backdrop-filter:blur(18px); }
+.ai-account-actions { margin-inline-start:auto; display:flex; align-items:center; gap:4px; min-width:0; }
+.ai-account-name { display:flex; align-items:center; gap:6px; max-width:230px; overflow:hidden; text-overflow:ellipsis; font-size:12px; direction:ltr; }
+.ai-account-name svg { width:16px; flex-shrink:0; }
+.almoghani-ai-shell { letter-spacing:0; background:var(--background); }
+.almoghani-ai-brand strong { letter-spacing:0; }
+.almoghani-ai-welcome h1 { font-size:38px; }
+.almoghani-ai-prompt { height:auto; min-height:76px; white-space:normal; justify-content:flex-start; border-radius:8px; }
+.almoghani-ai-prompt small { display:block; color:var(--muted-foreground); font-weight:400; margin-top:6px; }
+.almoghani-ai-bubble, .almoghani-ai-input-wrap textarea { font-size:var(--ai-font-size,16px); }
+.ai-workspace-dialog { --secondary:color-mix(in oklab,var(--primary) 12%,var(--surface)); --accent:var(--secondary); --accent-foreground:var(--foreground); --border:color-mix(in oklab,var(--primary) 28%,var(--foreground) 12%); --input:var(--border); --ring:var(--primary); width:calc(100vw - 24px); max-width:780px; max-height:88dvh; overflow-y:auto; background:var(--background); color:var(--foreground); font-family:var(--ai-font); border-radius:8px; backdrop-filter:blur(20px); }
+.ai-workspace-tabs { display:flex; flex-wrap:wrap; gap:8px; }
+.ai-workspace-input { width:100%; min-width:0; padding:10px 12px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--foreground); outline:none; font-family:inherit; }
+.ai-workspace-input:focus { border-color:var(--primary); }
+.ai-workspace-list { display:flex; flex-direction:column; gap:10px; min-height:180px; }
+.ai-workspace-row { display:flex; align-items:center; gap:6px; padding:8px; border:1px solid var(--border); border-radius:8px; min-width:0; }
+.ai-workspace-open { flex:1; min-width:0; height:auto; text-align:right; justify-content:flex-start; white-space:normal; }
+.ai-workspace-open span { min-width:0; overflow-wrap:anywhere; }
+.ai-workspace-row small { display:block; color:var(--muted-foreground); font-size:11px; margin-top:5px; font-weight:400; }
+.ai-workspace-output { border:1px solid var(--border); border-radius:8px; padding:16px; }
+.ai-workspace-output h3 { color:var(--primary); font-weight:700; }
+.ai-workspace-output p { white-space:pre-wrap; overflow-wrap:anywhere; margin-block:12px; font-size:14px; }
+.ai-workspace-empty { text-align:center; margin:auto; color:var(--muted-foreground); padding:24px; }
+.ai-workspace-form { display:flex; flex-direction:column; gap:14px; }
+.ai-workspace-form label { display:flex; flex-direction:column; gap:8px; font-size:14px; }
+.ai-admin-loading { display:grid; place-items:center; }
+.ai-admin-login { display:grid; place-items:center; overflow-y:auto; padding:28px 20px; }
+.ai-admin-login form { width:100%; max-width:370px; display:flex; flex-direction:column; gap:20px; }
+.ai-admin-login form > img { width:76px; height:76px; object-fit:cover; border-radius:8px; }
+.ai-admin-login h1 { font-size:24px; font-weight:800; }
+.ai-admin-login label { display:flex; flex-direction:column; gap:8px; }
+.ai-admin-layout { display:grid; grid-template-columns:240px minmax(0,1fr); flex:1; min-height:0; }
+.ai-admin-sidebar { border-inline-end:1px solid var(--border); padding:24px 14px; background:color-mix(in oklab,var(--surface) 70%,transparent); backdrop-filter:blur(20px); overflow-y:auto; }
+.ai-admin-sidebar nav { display:flex; flex-direction:column; gap:8px; }
+.ai-admin-sidebar nav button { justify-content:flex-start; height:46px; }
+.ai-admin-owner { display:flex; gap:10px; align-items:center; color:var(--primary); margin-bottom:30px; padding-inline:8px; }
+.ai-admin-owner small { display:block; margin-top:8px; color:var(--muted-foreground); font-size:10px; overflow-wrap:anywhere; direction:ltr; }
+.ai-admin-main { min-width:0; overflow-y:auto; padding:30px; }
+.ai-admin-heading { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; align-items:center; margin-bottom:22px; }
+.ai-admin-heading small { color:var(--muted-foreground); font-size:12px; }
+.ai-admin-heading h1 { margin-top:6px; font-weight:800; font-size:26px; color:var(--ai-heading); }
+.ai-admin-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-block:1px solid var(--border); margin-bottom:24px; }
+.ai-admin-stats > div { padding:20px 10px; display:flex; align-items:center; gap:12px; }
+.ai-admin-stats svg { width:20px; color:var(--primary); }
+.ai-admin-stats strong { font-size:26px; }
+.ai-admin-stats span { color:var(--muted-foreground); font-size:12px; }
+.ai-admin-status { padding:14px; border-inline-start:3px solid var(--primary); background:var(--surface); margin-bottom:20px; }
+.ai-admin-fields .ai-ctrl-body { padding:0; overflow:visible; }
+.ai-admin-fields .ai-ctrl-card { border:0; border-bottom:1px solid var(--border); background:transparent; border-radius:0; padding:12px 0 28px; }
+.ai-admin-fields input:not([type=color]),.ai-admin-fields textarea,.ai-admin-fields select { background:var(--surface); border-radius:6px; }
+.ai-admin-fields .ai-ctrl-add-box { background:transparent; border:0; padding:0; }
+.ai-admin-fields .ai-ctrl-sec-row,.ai-admin-fields .ai-ctrl-preset,.ai-admin-fields .ai-ctrl-color,.ai-admin-fields .ai-ctrl-font-sample { background:var(--surface); border-radius:8px; }
+.ai-admin-fields-content .ai-ctrl-card:not(:nth-child(2)):not(:nth-child(3)) { display:none; }
+.ai-admin-fields-design .ai-ctrl-card:nth-child(2),.ai-admin-fields-design .ai-ctrl-card:nth-child(3),.ai-admin-fields-design .ai-ctrl-card:last-child { display:none; }
+.ai-admin-fields-contact .ai-ctrl-card:not(:last-child) { display:none; }
+.ai-admin-fields .ai-ctrl-sec-inputs select { width:100%; border:1px solid var(--input); padding:8px; color:var(--foreground); }
+.ai-admin-section { display:flex; flex-direction:column; gap:16px; }
+.ai-admin-member { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; border-bottom:1px solid var(--border); padding:16px 0; }
+.ai-admin-member small,.ai-admin-member span { display:block; margin-top:6px; color:var(--muted-foreground); font-size:12px; overflow-wrap:anywhere; }
+.ai-admin-message { border:1px solid var(--border); background:var(--surface); border-radius:8px; padding:20px; }
+.ai-admin-message header { display:flex; justify-content:space-between; gap:10px; }
+.ai-admin-message a,.ai-admin-message small { display:block; margin-top:6px; font-size:12px; color:var(--muted-foreground); overflow-wrap:anywhere; }
+.ai-admin-message p { white-space:pre-wrap; overflow-wrap:anywhere; margin-block:20px; }
+.ai-admin-message footer { display:flex; flex-wrap:wrap; gap:8px; }
+@media(max-width:760px) {
+  .ai-workspace-nav { padding:10px; gap:4px; }
+  .ai-workspace-nav button { font-size:12px; padding-inline:10px; }
+  .ai-account-actions { margin-inline-start:0; }
+  .ai-account-name { max-width:160px; }
+  .almoghani-ai-welcome h1 { font-size:28px; }
+  .ai-admin-layout { display:flex; flex-direction:column; }
+  .ai-admin-sidebar { padding:8px; border-inline-end:0; border-bottom:1px solid var(--border); overflow:visible; }
+  .ai-admin-sidebar nav { display:flex; flex-direction:row; overflow-x:auto; gap:4px; }
+  .ai-admin-sidebar nav button { flex-shrink:0; font-size:12px; height:40px; }
+  .ai-admin-owner { display:none; }
+  .ai-admin-main { padding:20px 14px; flex:1; }
+  .ai-admin-heading h1 { font-size:22px; }
+  .ai-admin-stats > div { flex-direction:column; gap:4px; padding:12px 4px; text-align:center; }
+  .ai-admin-stats span { font-size:11px; }
+  .ai-admin-message { padding:14px; }
+}

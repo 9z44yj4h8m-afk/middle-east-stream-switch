@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { useSession } from "@tanstack/react-start/server";
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeAiPageConfig, safeAiLogoPath, type AiPageConfig } from "./ai-page-config";
 
 type AiAdminSession = { unlocked?: boolean };
@@ -53,7 +54,20 @@ export const saveAiPageConfig = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ config: z.unknown() }).parse(d))
   .handler(async ({ data }): Promise<{ ok: true; config: AiPageConfig }> => {
     await assertAiAdmin();
-    const clean = normalizeAiPageConfig(data.config);
+    return persistAiConfig(data.config);
+  });
+
+export const saveAiOwnerConfig = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ config: z.unknown() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: admin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!admin) throw new Error("غير مسموح.");
+    return persistAiConfig(data.config);
+  });
+
+async function persistAiConfig(config: unknown): Promise<{ ok: true; config: AiPageConfig }> {
+    const clean = normalizeAiPageConfig(config);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: existing } = await supabaseAdmin
       .from("site_settings")
@@ -73,7 +87,7 @@ export const saveAiPageConfig = createServerFn({ method: "POST" })
       await supabaseAdmin.storage.from("bot-avatars").remove([oldLogoPath]);
     }
     return { ok: true as const, config: clean };
-  });
+}
 
 const ALLOWED_MIME: Record<string, string> = {
   "image/png": "png",
@@ -102,6 +116,19 @@ export const uploadAiLogo = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     await assertAiAdmin();
+    return persistAiLogo(data);
+  });
+
+export const uploadAiOwnerLogo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ contentType: z.string().max(40), base64: z.string().min(16).max(3_200_000) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: admin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!admin) throw new Error("غير مسموح.");
+    return persistAiLogo(data);
+  });
+
+async function persistAiLogo(data: { contentType: string; base64: string }) {
     const ext = ALLOWED_MIME[data.contentType.toLowerCase()];
     if (!ext) throw new Error("صيغة الصورة غير مدعومة (استخدم PNG أو JPG أو WebP).");
 
@@ -117,4 +144,4 @@ export const uploadAiLogo = createServerFn({ method: "POST" })
     if (error) throw new Error("تعذّر رفع الشعار؛ حاول مرة أخرى.");
 
     return { logoPath };
-  });
+}

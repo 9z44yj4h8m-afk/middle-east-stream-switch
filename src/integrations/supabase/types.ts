@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_read: boolean
+          message: string
+          name: string
+          sender_hash: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_read?: boolean
+          message: string
+          name: string
+          sender_hash: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          name?: string
+          sender_hash?: string
+        }
+        Relationships: []
+      }
+      ai_conversations: {
+        Row: {
+          id: string
+          messages: Json
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          messages?: Json
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          messages?: Json
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ai_library_files: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          path: string
+          size: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          path: string
+          size?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          path?: string
+          size?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       channel_overrides: {
         Row: {
           category: string | null
@@ -398,6 +479,7 @@ export type Database = {
         Args: { p_suspended: boolean; p_user: string }
         Returns: boolean
       }
+      ai_member_active: { Args: never; Returns: boolean }
       claim_owner_admin: { Args: never; Returns: boolean }
       create_chat_room: {
         Args: { p_name: string }
@@ -436,6 +518,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      submit_ai_contact: {
+        Args: {
+          _email: string
+          _message: string
+          _name: string
+          _sender_hash: string
+        }
+        Returns: undefined
       }
       unlock_member_library: { Args: { p_pin: string }; Returns: boolean }
     }

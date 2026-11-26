@@ -15,6 +15,7 @@ import { Route as R22RouteImport } from './routes/22'
 import { Route as ARouteImport } from './routes/a'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminChatRouteImport } from './routes/admin-chat'
+import { Route as Admin_aiRouteImport } from './routes/admin_ai'
 import { Route as AhmedRouteImport } from './routes/ahmed'
 import { Route as AiRouteImport } from './routes/ai'
 import { Route as Ai1RouteImport } from './routes/ai1'
@@ -84,6 +85,11 @@ const AdminRoute = AdminRouteImport.update({
 const AdminChatRoute = AdminChatRouteImport.update({
   id: '/admin-chat',
   path: '/admin-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Admin_aiRoute = Admin_aiRouteImport.update({
+  id: '/admin_ai',
+  path: '/admin_ai',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AhmedRoute = AhmedRouteImport.update({
@@ -295,6 +301,7 @@ export interface FileRoutesByFullPath {
   '/a': typeof ARoute
   '/admin': typeof AdminRoute
   '/admin-chat': typeof AdminChatRoute
+  '/admin_ai': typeof Admin_aiRoute
   '/ahmed': typeof AhmedRoute
   '/ai': typeof AiRoute
   '/ai1': typeof Ai1Route
@@ -343,6 +350,7 @@ export interface FileRoutesByTo {
   '/a': typeof ARoute
   '/admin': typeof AdminRoute
   '/admin-chat': typeof AdminChatRoute
+  '/admin_ai': typeof Admin_aiRoute
   '/ahmed': typeof AhmedRoute
   '/ai': typeof AiRoute
   '/ai1': typeof Ai1Route
@@ -392,6 +400,7 @@ export interface FileRoutesById {
   '/a': typeof ARoute
   '/admin': typeof AdminRoute
   '/admin-chat': typeof AdminChatRoute
+  '/admin_ai': typeof Admin_aiRoute
   '/ahmed': typeof AhmedRoute
   '/ai': typeof AiRoute
   '/ai1': typeof Ai1Route
@@ -442,6 +451,7 @@ export interface FileRouteTypes {
     | '/a'
     | '/admin'
     | '/admin-chat'
+    | '/admin_ai'
     | '/ahmed'
     | '/ai'
     | '/ai1'
@@ -490,6 +500,7 @@ export interface FileRouteTypes {
     | '/a'
     | '/admin'
     | '/admin-chat'
+    | '/admin_ai'
     | '/ahmed'
     | '/ai'
     | '/ai1'
@@ -538,6 +549,7 @@ export interface FileRouteTypes {
     | '/a'
     | '/admin'
     | '/admin-chat'
+    | '/admin_ai'
     | '/ahmed'
     | '/ai'
     | '/ai1'
@@ -587,6 +599,7 @@ export interface RootRouteChildren {
   ARoute: typeof ARoute
   AdminRoute: typeof AdminRoute
   AdminChatRoute: typeof AdminChatRoute
+  Admin_aiRoute: typeof Admin_aiRoute
   AhmedRoute: typeof AhmedRoute
   AiRoute: typeof AiRoute
   Ai1Route: typeof Ai1Route
@@ -671,6 +684,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-chat'
       fullPath: '/admin-chat'
       preLoaderRoute: typeof AdminChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin_ai': {
+      id: '/admin_ai'
+      path: '/admin_ai'
+      fullPath: '/admin_ai'
+      preLoaderRoute: typeof Admin_aiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ahmed': {
@@ -963,6 +983,7 @@ const rootRouteChildren: RootRouteChildren = {
   ARoute: ARoute,
   AdminRoute: AdminRoute,
   AdminChatRoute: AdminChatRoute,
+  Admin_aiRoute: Admin_aiRoute,
   AhmedRoute: AhmedRoute,
   AiRoute: AiRoute,
   Ai1Route: Ai1Route,

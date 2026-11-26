@@ -1,8 +1,13 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowUp, Check, Copy, Home, RotateCcw, Settings, Sparkles, Square } from "lucide-react";
+import { ArrowUp, Check, Copy, Home, Plus, Settings, Sparkles, Square, Library, Mail, UserRound, LogOut, BookOpen, Tv, PenLine, Globe } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type KeyboardEvent } from "react";
 
-import { AiControlPanel } from "@/components/ai-control-panel";
+import { AiWorkspaceDialogs } from "@/components/ai-workspace-dialogs";
+import { useMember } from "@/components/member-provider";
+import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { parseAiLibrary, type AiConversation } from "@/lib/ai-workspace";
 import { AiMessageBody } from "@/components/ai-message-body";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,16 +15,15 @@ import {
   defaultAiPageConfig,
   resolvedAiLogoSrc,
   useAiPageConfig,
-  type AiPageConfig,
 } from "@/lib/ai-page-config";
 
 type ChatMessage = { id: string; role: "user" | "assistant"; content: string };
 
 const STORAGE_KEY = "almoghani_ai_chat_v1";
 
-function loadSaved(): ChatMessage[] {
+function loadSaved(key: string): ChatMessage[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
@@ -39,16 +43,21 @@ function loadSaved(): ChatMessage[] {
 }
 
 export function AlmoghaniAiPage() {
+  const { user, ready } = useMember();
+  const qc = useQueryClient();
+  const navigate = useNavigate();
+  const storageKey = `${STORAGE_KEY}:${user?.id ?? "guest"}`;
+  const [view, setView] = useState<"library" | "contact" | null>(null);
+  const [conversations, setConversations] = useState<AiConversation[]>([]);
+  const [chatId, setChatId] = useState("");
   const { data: loadedConfig } = useAiPageConfig();
   const savedConfig = loadedConfig ?? defaultAiPageConfig;
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [previewDraft, setPreviewDraft] = useState<AiPageConfig | null>(null);
-  const [previewLogo, setPreviewLogo] = useState("");
-  const active = previewDraft ?? savedConfig;
-  const logoSrc = previewLogo || resolvedAiLogoSrc(active);
+  const active = savedConfig;
+  const logoSrc = resolvedAiLogoSrc(active);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const [hydratedKey, setHydratedKey] = useState("");
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState("");
@@ -58,19 +67,38 @@ export function AlmoghaniAiPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    setMessages(loadSaved());
+    if (!ready) return;
+    stopReply();
+    setMessages(loadSaved(storageKey));
+    try {
+      setConversations(parseAiLibrary(JSON.parse(localStorage.getItem(`${storageKey}:library`) ?? "[]")));
+      setChatId(localStorage.getItem(`${storageKey}:id`) || crypto.randomUUID());
+    } catch { setConversations([]); setChatId(crypto.randomUUID()); }
     setHydrated(true);
-  }, []);
+    setHydratedKey(storageKey);
+  }, [ready, storageKey]);
 
   useEffect(() => {
-    if (!hydrated || streaming) return;
+    if (!hydrated || hydratedKey !== storageKey || streaming || !chatId) return;
+    const completed = messages.filter((m) => m.content.trim().length > 0).slice(-30);
     try {
-      const completed = messages.filter((m) => m.content.trim().length > 0).slice(-30);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(completed));
+      localStorage.setItem(storageKey, JSON.stringify(completed));
+      localStorage.setItem(`${storageKey}:id`, chatId);
     } catch {
       /* storage unavailable */
     }
-  }, [messages, hydrated, streaming]);
+    if (!completed.length) return;
+    const chat: AiConversation = { id: chatId, title: (completed.find((m) => m.role === "user")?.content || "محادثة جديدة").slice(0, 120), messages: completed, updated_at: new Date().toISOString() };
+    setConversations((prev) => {
+      const next = [chat, ...prev.filter((c) => c.id !== chatId)].slice(0, 100);
+      try { localStorage.setItem(`${storageKey}:library`, JSON.stringify(next)); } catch { /* storage full */ }
+      return next;
+    });
+    if (user) void supabase.from("ai_conversations").upsert({ ...chat, user_id: user.id }).then(({ error: saveError }) => {
+      if (saveError) setError("تعذّر حفظ المحادثة في حسابك؛ النسخة محفوظة على هذا الجهاز.");
+      else void qc.invalidateQueries({ queryKey: ["ai-library", user.id] });
+    });
+  }, [messages, hydrated, hydratedKey, streaming, chatId, storageKey, user?.id, qc]);
 
   useEffect(() => {
     const el = listRef.current;
@@ -96,9 +124,17 @@ export function AlmoghaniAiPage() {
     setMessages([]);
     setError("");
     setInput("");
+    setChatId(crypto.randomUUID());
     resizeInput(textareaRef.current);
-    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    try { localStorage.removeItem(storageKey); } catch { /* ignore */ }
   }
+
+  function selectChat(chat: AiConversation) { stopReply(); setChatId(chat.id); setMessages(chat.messages); setError(""); setInput(""); }
+  function deleteChat(id: string) {
+    setConversations((prev) => { const next = prev.filter((chat) => chat.id !== id); try { localStorage.setItem(`${storageKey}:library`, JSON.stringify(next)); } catch { /* storage unavailable */ } return next; });
+    if (chatId === id) startNewChat();
+  }
+  async function signOut() { stopReply(); setHydrated(false); setMessages([]); setConversations([]); await qc.cancelQueries(); qc.clear(); await supabase.auth.signOut(); await navigate({ to: "/auth", replace: true }); }
 
   async function copyReply(id: string, text: string) {
     try {
@@ -128,9 +164,10 @@ export function AlmoghaniAiPage() {
     abortRef.current = controller;
 
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
       const res = await fetch("/api/public/almoghani-ai", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(sessionData.session ? { Authorization: `Bearer ${sessionData.session.access_token}` } : {}) },
         body: JSON.stringify({ messages: history.map(({ role, content }) => ({ role, content })) }),
         signal: controller.signal,
       });
@@ -201,6 +238,7 @@ export function AlmoghaniAiPage() {
     "--primary-foreground": contrastOnHex(active.accentColor),
     "--ai-heading": active.headingColor,
     "--ai-font": `"${active.fontFamily}", sans-serif`,
+    "--ai-font-size": `${active.fontSize}px`,
   } as CSSProperties;
 
   return (
@@ -214,12 +252,6 @@ export function AlmoghaniAiPage() {
           </div>
         </div>
         <div className="almoghani-ai-actions">
-          {messages.length > 0 && (
-            <Button type="button" variant="outline" size="sm" onClick={startNewChat}>
-              <RotateCcw />
-              <span>{active.newChatLabel}</span>
-            </Button>
-          )}
           <Button asChild variant="outline" size="sm">
             <Link to="/">
               <Home />
@@ -227,18 +259,24 @@ export function AlmoghaniAiPage() {
             </Link>
           </Button>
           <Button
-            type="button"
+            asChild
             variant="outline"
             size="icon"
             className="almoghani-ai-settings-btn"
-            onClick={() => setPanelOpen(true)}
             aria-label="إعدادات الصفحة"
             title="إعدادات الصفحة"
           >
-            <Settings />
+            <Link to="/admin_ai"><Settings /></Link>
           </Button>
         </div>
       </header>
+
+      <nav className="ai-workspace-nav" aria-label="قائمة المساعد">
+        <Button onClick={startNewChat}><Plus /><span>محادثة جديدة</span></Button>
+        <Button variant="ghost" onClick={() => setView("library")}><Library /><span>المكتبة</span></Button>
+        <Button variant="ghost" onClick={() => setView("contact")}><Mail /><span>راسلني</span></Button>
+        <div className="ai-account-actions">{user ? <><span className="ai-account-name"><UserRound />{user.email}</span><Button variant="ghost" size="icon" onClick={() => void signOut()} title="تسجيل الخروج" aria-label="تسجيل الخروج"><LogOut /></Button></> : <Button asChild variant="outline"><Link to="/auth"><UserRound />دخول / إنشاء حساب</Link></Button>}</div>
+      </nav>
 
       <main ref={listRef} className="almoghani-ai-scroll" aria-live="polite">
         {messages.length === 0 ? (
@@ -251,10 +289,10 @@ export function AlmoghaniAiPage() {
             {active.sections.length > 0 && (
               <div className={active.layoutStyle === "list" ? "almoghani-ai-prompts is-list" : "almoghani-ai-prompts"}>
                 {active.sections.map((sec) => (
-                  <button key={sec.id} type="button" className="almoghani-ai-prompt" onClick={() => void sendMessage(sec.prompt)}>
-                    <Sparkles aria-hidden="true" />
-                    <span>{sec.title}</span>
-                  </button>
+                  <Button variant="outline" key={sec.id} type="button" className="almoghani-ai-prompt" onClick={() => void sendMessage(sec.prompt)}>
+                    {sec.icon === "book" ? <BookOpen /> : sec.icon === "tv" ? <Tv /> : sec.icon === "pen" ? <PenLine /> : sec.icon === "globe" ? <Globe /> : <Sparkles />}
+                    <span>{sec.title}{sec.description && <small>{sec.description}</small>}</span>
+                  </Button>
                 ))}
               </div>
             )}
@@ -333,15 +371,7 @@ export function AlmoghaniAiPage() {
         </div>
       </form>
 
-      <AiControlPanel
-        open={panelOpen}
-        savedConfig={savedConfig}
-        onClose={() => setPanelOpen(false)}
-        onPreviewChange={(d, logo) => {
-          setPreviewDraft(d);
-          setPreviewLogo(logo);
-        }}
-      />
+      <AiWorkspaceDialogs view={view} onClose={() => setView(null)} config={active} theme={shellStyle} localConversations={conversations} onSelect={selectChat} onDelete={deleteChat} />
     </div>
   );
 }

@@ -70,4 +70,23 @@ describe("ai-page-config normalization", () => {
     expect(contrastOnHex("#d4a62a")).toBe("#111111");
     expect(contrastOnHex("#1e3a8a")).toBe("#ffffff");
   });
+  it("preserves section descriptions, icons and owner ordering", () => {
+    const cfg = normalizeAiPageConfig({ sections: [{ id: "second", title: "الثاني", description: "وصف", icon: "book" }, { id: "first", title: "الأول", icon: "tv" }] });
+    expect(cfg.sections.map((s) => s.id)).toEqual(["second", "first"]);
+    expect(cfg.sections[0]?.description).toBe("وصف");
+    expect(cfg.sections[0]?.icon).toBe("book");
+  });
+  it("persists the Arabic fonts and chosen font size", () => {
+    for (const fontFamily of ["Cairo", "Tajawal", "IBM Plex Sans Arabic"]) {
+      const cfg = normalizeAiPageConfig({ fontFamily, fontSize: 20 });
+      expect(cfg.fontFamily).toBe(fontFamily);
+      expect(cfg.fontSize).toBe(20);
+    }
+  });
+  it("persists contact settings without permitting URL injection", () => {
+    const cfg = normalizeAiPageConfig({ contactEmail: "ahmed@almoghani.net", contactWhatsapp: "+966 557073007", contactX: "Op430" });
+    expect(cfg.contactEmail).toBe("ahmed@almoghani.net");
+    expect(cfg.contactWhatsapp).toBe("966557073007");
+    expect(normalizeAiPageConfig({ contactWhatsapp: "javascript:alert(1)" }).contactWhatsapp).toBe("1");
+  });
 });

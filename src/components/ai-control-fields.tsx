@@ -1,4 +1,4 @@
-import { Plus, RotateCcw, Trash2, Upload } from "lucide-react";
+import { Plus, RotateCcw, Trash2, Upload, ArrowUp, ArrowDown } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,7 @@ export function AiControlFields({
     setNewPrompt("");
   }
 
-  function updateSection(id: string, patch: { title?: string; prompt?: string }) {
+  function updateSection(id: string, patch: { title?: string; prompt?: string; description?: string; icon?: string }) {
     onChange({
       ...draft,
       sections: draft.sections.map((s) => (s.id === id ? { ...s, ...patch } : s)),
@@ -55,7 +55,16 @@ export function AiControlFields({
   }
 
   function removeSection(id: string) {
+    if (!window.confirm("هل تريد حذف هذا القسم؟")) return;
     onChange({ ...draft, sections: draft.sections.filter((s) => s.id !== id) });
+  }
+
+  function moveSection(index: number, direction: number) {
+    const next = [...draft.sections];
+    const current = next[index]; const target = next[index + direction];
+    if (!current || !target) return;
+    next[index] = target; next[index + direction] = current;
+    set("sections", next);
   }
 
   const currentLogo = logoPreview || resolvedAiLogoSrc(draft);
@@ -180,6 +189,14 @@ export function AiControlFields({
                     value={sec.prompt}
                     onChange={(e) => updateSection(sec.id, { prompt: e.target.value })}
                   />
+                  <input aria-label={`وصف القسم ${i + 1}`} placeholder="وصف القسم" maxLength={240} value={sec.description ?? ""} onChange={(e) => updateSection(sec.id, { description: e.target.value })} />
+                  <select aria-label={`أيقونة القسم ${i + 1}`} value={sec.icon ?? "sparkles"} onChange={(e) => updateSection(sec.id, { icon: e.target.value })}>
+                    <option value="sparkles">نجمة</option><option value="book">كتاب</option><option value="tv">تلفزيون</option><option value="pen">قلم</option><option value="globe">عالم</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Button variant="ghost" size="icon" disabled={i === 0} aria-label={`رفع القسم ${i + 1}`} title="رفع القسم" onClick={() => moveSection(i, -1)}><ArrowUp /></Button>
+                  <Button variant="ghost" size="icon" disabled={i === draft.sections.length - 1} aria-label={`خفض القسم ${i + 1}`} title="خفض القسم" onClick={() => moveSection(i, 1)}><ArrowDown /></Button>
                 </div>
                 <Button
                   type="button"
@@ -287,6 +304,7 @@ export function AiControlFields({
 
       <section className="ai-ctrl-card">
         <h3>تغيير نوع الخط</h3>
+        <label className="ai-ctrl-field"><span>حجم الخط: {draft.fontSize}</span><input type="range" min={12} max={24} value={draft.fontSize} onChange={(e) => set("fontSize", Number(e.target.value))} /></label>
         <label className="ai-ctrl-field">
           <span>اختر نوع الخط</span>
           <select value={draft.fontFamily} onChange={(e) => set("fontFamily", e.target.value)}>
@@ -300,6 +318,13 @@ export function AiControlFields({
         <p className="ai-ctrl-font-sample" style={{ fontFamily: `"${draft.fontFamily}", sans-serif` }}>
           معاينة الخط: أهلاً بك في المغني الذكي — ALMOGHANI AI
         </p>
+      </section>
+      <section className="ai-ctrl-card">
+        <h3>بيانات راسلني</h3>
+        <label className="ai-ctrl-field"><span>البريد الإلكتروني</span><input type="email" dir="ltr" value={draft.contactEmail} onChange={(e) => set("contactEmail", e.target.value)} /></label>
+        <label className="ai-ctrl-field"><span>رقم واتساب الدولي</span><input dir="ltr" value={draft.contactWhatsapp} onChange={(e) => set("contactWhatsapp", e.target.value)} /></label>
+        <label className="ai-ctrl-field"><span>حساب إكس</span><input dir="ltr" value={draft.contactX} onChange={(e) => set("contactX", e.target.value)} /></label>
+        <label className="ai-ctrl-field"><span>حساب سناب شات</span><input dir="ltr" value={draft.contactSnapchat} onChange={(e) => set("contactSnapchat", e.target.value)} /></label>
       </section>
     </div>
   );

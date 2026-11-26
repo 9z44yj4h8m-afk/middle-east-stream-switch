@@ -5,6 +5,8 @@ export type AiSectionItem = {
   id: string;
   title: string;
   prompt: string;
+  description?: string;
+  icon?: string;
 };
 
 export type AiLayoutStyle = "cards" | "list";
@@ -37,6 +39,11 @@ export type AiPageConfig = {
   mutedTextColor: string;
   headingColor: string;
   sections: AiSectionItem[];
+  fontSize: number;
+  contactEmail: string;
+  contactWhatsapp: string;
+  contactX: string;
+  contactSnapchat: string;
 };
 
 export const AI_FONTS = [
@@ -163,7 +170,8 @@ export function contrastOnHex(hex: string): string {
 
 export function normalizeAiPageConfig(raw: unknown): AiPageConfig {
   const o = (raw && typeof raw === "object" ? raw : {}) as Partial<AiPageConfig>;
-  const base = AI_THEME_PRESETS[0]!;
+  const base = AI_THEME_PRESETS[0];
+  if (!base) throw new Error("Missing AI theme");
   const themePreset = (
     typeof o.themePreset === "string" && ALLOWED_PRESETS.has(o.themePreset)
       ? o.themePreset
@@ -184,7 +192,7 @@ export function normalizeAiPageConfig(raw: unknown): AiPageConfig {
           typeof s.id === "string" && /^[a-z0-9_-]{2,40}$/i.test(s.id)
             ? s.id
             : `sec-${idx + 1}`;
-        return { id, title, prompt };
+        return { id, title, prompt, ...(s.description ? { description: cleanText(s.description, 240) } : {}), ...(s.icon ? { icon: ["sparkles", "book", "tv", "pen", "globe"].includes(s.icon) ? s.icon : "sparkles" } : {}) };
       })
       .filter((s) => s.title.length > 0)
       .slice(0, 30);
@@ -214,6 +222,11 @@ export function normalizeAiPageConfig(raw: unknown): AiPageConfig {
     mutedTextColor: pickHex(o.mutedTextColor, base.mutedTextColor),
     headingColor: pickHex(o.headingColor, base.headingColor),
     sections,
+    fontSize: typeof o.fontSize === "number" && Number.isFinite(o.fontSize) ? Math.min(24, Math.max(12, Math.round(o.fontSize))) : 16,
+    contactEmail: typeof o.contactEmail === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(o.contactEmail) ? o.contactEmail.slice(0, 120) : "ahmed@almoghani.net",
+    contactWhatsapp: typeof o.contactWhatsapp === "string" ? o.contactWhatsapp.replace(/\D/g, "").slice(0, 15) : "966557073007",
+    contactX: cleanText(o.contactX, 40).replace(/[^a-z0-9_]/gi, "") || "Op430",
+    contactSnapchat: cleanText(o.contactSnapchat, 40).replace(/[^a-z0-9_.-]/gi, "") || "Ls460g",
   };
 }
 
