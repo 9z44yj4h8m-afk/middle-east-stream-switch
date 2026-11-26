@@ -1,9 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { VoicePinGate } from "@/components/admin/voice-pin-gate";
-import { useMember } from "@/components/member-provider";
-import { Link } from "@tanstack/react-router";
 import { SayNowForm } from "@/components/admin/voice-chat-manager";
 
 export const Route = createFileRoute("/22")({
@@ -23,24 +19,10 @@ export const Route = createFileRoute("/22")({
 });
 
 function AdminVoicesPage() {
-  const { user, ready } = useMember();
-  const [admin, setAdmin] = useState<boolean | null>(null);
-  useEffect(() => {
-    let alive = true;
-    setAdmin(null);
-    if (!user) setAdmin(false); else void supabase.rpc("claim_owner_admin").then(async ({ data }) => {
-      if (data) { if (alive) setAdmin(true); return; }
-      const { data: s } = await supabase.from("member_library_sessions").select("unlocked").maybeSingle();
-      if (alive) setAdmin(s?.unlocked === true);
-    });
-    return () => { alive = false; };
-  }, [user]);
-  if (!ready) return null;
-  const locked = admin !== true;
   return <div dir="rtl" className="voice-studio-page voice-studio-full">
     <main className="voice-studio-main">
       <Link to="/mic" className="block text-center rounded-xl bg-primary text-primary-foreground font-bold py-2 mb-2">🎙️ حوّل صوتي لصوت بنت</Link>
-      <SayNowForm locked={locked} />
+      <SayNowForm locked={false} />
     </main>
   </div>;
 }

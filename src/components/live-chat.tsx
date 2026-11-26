@@ -47,9 +47,12 @@ export function LiveChat({ onIncoming, bare = false, voice = false }: { onIncomi
   const audioRef = useRef<HTMLAudioElement | null>(null);
   async function playVoice(id: string) {
     audioRef.current?.pause();
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) { setError("سجّل الدخول أولًا للاستماع لصوت الرسائل."); return; }
     setVoiceLoading(id);
     try {
-      const res = await fetch("/api/public/bot-voice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messageId: id }) });
+      const res = await fetch("/api/public/bot-voice", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ messageId: id }) });
       if (!res.ok) throw new Error();
       const audio = new Audio(URL.createObjectURL(await res.blob()));
       audioRef.current = audio;
@@ -65,7 +68,10 @@ export function LiveChat({ onIncoming, bare = false, voice = false }: { onIncomi
     while (voiceOnRef.current && queueRef.current.length) {
       const id = queueRef.current.shift()!;
       try {
-        const res = await fetch("/api/public/bot-voice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messageId: id }) });
+        const { data: sessionData } = await supabase.auth.getSession();
+        const token = sessionData.session?.access_token;
+        if (!token) break;
+        const res = await fetch("/api/public/bot-voice", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ messageId: id }) });
         if (!res.ok) continue;
         const audio = new Audio(URL.createObjectURL(await res.blob()));
         audioRef.current = audio;
@@ -79,7 +85,7 @@ export function LiveChat({ onIncoming, bare = false, voice = false }: { onIncomi
   const listRef = useRef<HTMLDivElement>(null);
   const [guestName, setGuestName] = useState("");
   const [entered, setEntered] = useState(false);
-  const myBan = useMyChatBan(guestName).data ?? undefined;
+  const myBan = useMyChatBan(guestName, !!user).data ?? undefined;
   const bannedOut = !!myBan && myBan.kind === "ban";
   useEffect(() => { prefetchVoiceTurn(); }, [voice]);
   voiceOnRef.current = false; // voice page uses VoiceRoom turns instead
@@ -113,13 +119,14 @@ export function LiveChat({ onIncoming, bare = false, voice = false }: { onIncomi
     return () => clearInterval(t);
   }, []);
   useEffect(() => {
+    if (!user) return;
     const run = () => { if (!voice && !roomId && document.visibilityState === "visible") void botBanter().catch(() => {}); };
     const first = setTimeout(run, 8000);
     const t = setInterval(run, voice && entered ? 20000 : 60000);
     return () => { clearTimeout(first); clearInterval(t); };
-  }, [roomId, voice, entered]);
+  }, [roomId, voice, entered, user?.id]);
   useEffect(() => {
-    if (!entered || !guestName.trim()) return;
+    if (!user || !entered || !guestName.trim()) return;
     let last: string | null = null; let ready = false;
     const check = () => { void supabase.rpc("get_my_room_move", { p_name: guestName.trim() }).then(({ data: rows }) => { const data = rows?.[0];
       const stamp = data?.moved_at ?? ""; if (!ready) { ready = true; last = stamp; return; }
@@ -127,7 +134,7 @@ export function LiveChat({ onIncoming, bare = false, voice = false }: { onIncomi
     }); };
     check(); const t = window.setInterval(check, 5000);
     return () => window.clearInterval(t);
-  }, [entered, guestName]);
+  }, [entered, guestName, user?.id]);
   useEffect(() => {
     setGuestName(localStorage.getItem("chat-name") ?? "");
     try { setMyIds(JSON.parse(localStorage.getItem("chat-mine") ?? "[]")); } catch { /* ignore */ }

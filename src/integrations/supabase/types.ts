@@ -336,6 +336,27 @@ export type Database = {
         }
         Relationships: []
       }
+      library_pin_attempts: {
+        Row: {
+          failed_count: number
+          locked_until: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          failed_count?: number
+          locked_until?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          failed_count?: number
+          locked_until?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       member_library_sessions: {
         Row: {
           entered_at: string
@@ -377,6 +398,7 @@ export type Database = {
           created_at: string
           display_name: string
           last_login_at: string | null
+          library_approved: boolean
           suspended: boolean
           user_id: string
         }
@@ -384,6 +406,7 @@ export type Database = {
           created_at?: string
           display_name?: string
           last_login_at?: string | null
+          library_approved?: boolean
           suspended?: boolean
           user_id: string
         }
@@ -391,6 +414,7 @@ export type Database = {
           created_at?: string
           display_name?: string
           last_login_at?: string | null
+          library_approved?: boolean
           suspended?: boolean
           user_id?: string
         }
@@ -474,6 +498,10 @@ export type Database = {
     }
     Functions: {
       add_chat_reaction: { Args: { p_emoji: string }; Returns: number }
+      admin_set_library_approved: {
+        Args: { p_approved: boolean; p_user: string }
+        Returns: boolean
+      }
       admin_set_library_pin: { Args: { p_pin: string }; Returns: boolean }
       admin_set_member_suspended: {
         Args: { p_suspended: boolean; p_user: string }
@@ -498,7 +526,7 @@ export type Database = {
       }
       ensure_member_profile: { Args: never; Returns: undefined }
       get_my_chat_ban: {
-        Args: { p_name: string }
+        Args: { p_name?: string }
         Returns: {
           kind: string
           name: string
@@ -506,7 +534,7 @@ export type Database = {
         }[]
       }
       get_my_room_move: {
-        Args: { p_name: string }
+        Args: { p_name?: string }
         Returns: {
           moved_at: string
           room_id: string

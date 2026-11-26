@@ -28,6 +28,7 @@ import satelliteMark from "@/assets/satellite-mark.jpg";
 import { InstallAppButton } from "@/components/install-app-button";
 import { BroadcastWordmark } from "@/components/broadcast-shell";
 import { BroadcastHero } from "@/components/broadcast-hero";
+import { useMember } from "@/components/member-provider";
 import { BreakingTicker } from "@/components/mobile-bottom-nav";
 import { Button } from "@/components/ui/button";
 import { searchChannelsWithAi } from "@/lib/channel-search.functions";
@@ -59,6 +60,7 @@ export const liveSections = sections;
 
 
 export function PortalPage({ section, homepage = false }: { section?: string; homepage?: boolean }) {
+  const { user } = useMember();
   const channels = useCatalog();
   const { data: siteConfig } = useSiteConfig();
   const texts = siteConfig?.texts ?? defaultTexts;
@@ -106,6 +108,16 @@ export function PortalPage({ section, homepage = false }: { section?: string; ho
     setSearching(true);
     setSearchError("");
     setSearchResultIds(null);
+    if (!user) {
+      const q = query.toLowerCase();
+      setSearchResultIds(
+        channels
+          .filter((c) => `${c.name} ${c.category} ${c.description}`.toLowerCase().includes(q))
+          .map((c) => c.id),
+      );
+      setSearching(false);
+      return;
+    }
     try {
       const result = await searchWithAi({
         data: {

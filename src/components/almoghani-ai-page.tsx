@@ -149,6 +149,10 @@ export function AlmoghaniAiPage() {
   async function sendMessage(rawText: string) {
     const text = rawText.trim();
     if (!text || streaming) return;
+    if (!user) {
+      setError("سجّل الدخول أولًا لاستخدام المساعد الذكي.");
+      return;
+    }
     setError("");
     setInput("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
@@ -165,10 +169,13 @@ export function AlmoghaniAiPage() {
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("سجّل الدخول أولًا لاستخدام المساعد الذكي.");
+      const userTurns = history.filter((m) => m.role === "user").map(({ content }) => ({ role: "user" as const, content }));
       const res = await fetch("/api/public/almoghani-ai", {
         method: "POST",
-        headers: { "content-type": "application/json", ...(sessionData.session ? { Authorization: `Bearer ${sessionData.session.access_token}` } : {}) },
-        body: JSON.stringify({ messages: history.map(({ role, content }) => ({ role, content })) }),
+        headers: { "content-type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ messages: userTurns }),
         signal: controller.signal,
       });
 

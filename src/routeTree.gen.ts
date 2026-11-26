@@ -42,7 +42,6 @@ import { Route as UnlockRouteImport } from './routes/unlock'
 import { Route as VipRouteImport } from './routes/vip'
 import { Route as VoiceChatRouteImport } from './routes/voice-chat'
 import { Route as YoutubeRouteImport } from './routes/youtube'
-import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ChannelsSectionRouteImport } from './routes/channels.$section'
 import { Route as FeaturedIndexRouteImport } from './routes/featured.index'
 import { Route as FeaturedChannelRouteImport } from './routes/featured.$channel'
@@ -222,11 +221,6 @@ const YoutubeRoute = YoutubeRouteImport.update({
   path: '/youtube',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiChatRoute = ApiChatRouteImport.update({
-  id: '/api/chat',
-  path: '/api/chat',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ChannelsSectionRoute = ChannelsSectionRouteImport.update({
   id: '/channels/$section',
   path: '/channels/$section',
@@ -328,7 +322,6 @@ export interface FileRoutesByFullPath {
   '/vip': typeof VipRoute
   '/voice-chat': typeof VoiceChatRoute
   '/youtube': typeof YoutubeRoute
-  '/api/chat': typeof ApiChatRoute
   '/channels/$section': typeof ChannelsSectionRoute
   '/featured/$channel': typeof FeaturedChannelRoute
   '/featured/': typeof FeaturedIndexRoute
@@ -377,7 +370,6 @@ export interface FileRoutesByTo {
   '/vip': typeof VipRoute
   '/voice-chat': typeof VoiceChatRoute
   '/youtube': typeof YoutubeRoute
-  '/api/chat': typeof ApiChatRoute
   '/channels/$section': typeof ChannelsSectionRoute
   '/featured/$channel': typeof FeaturedChannelRoute
   '/featured': typeof FeaturedIndexRoute
@@ -427,7 +419,6 @@ export interface FileRoutesById {
   '/vip': typeof VipRoute
   '/voice-chat': typeof VoiceChatRoute
   '/youtube': typeof YoutubeRoute
-  '/api/chat': typeof ApiChatRoute
   '/channels/$section': typeof ChannelsSectionRoute
   '/featured/$channel': typeof FeaturedChannelRoute
   '/featured/': typeof FeaturedIndexRoute
@@ -478,7 +469,6 @@ export interface FileRouteTypes {
     | '/vip'
     | '/voice-chat'
     | '/youtube'
-    | '/api/chat'
     | '/channels/$section'
     | '/featured/$channel'
     | '/featured/'
@@ -527,7 +517,6 @@ export interface FileRouteTypes {
     | '/vip'
     | '/voice-chat'
     | '/youtube'
-    | '/api/chat'
     | '/channels/$section'
     | '/featured/$channel'
     | '/featured'
@@ -576,7 +565,6 @@ export interface FileRouteTypes {
     | '/vip'
     | '/voice-chat'
     | '/youtube'
-    | '/api/chat'
     | '/channels/$section'
     | '/featured/$channel'
     | '/featured/'
@@ -626,7 +614,6 @@ export interface RootRouteChildren {
   VipRoute: typeof VipRoute
   VoiceChatRoute: typeof VoiceChatRoute
   YoutubeRoute: typeof YoutubeRoute
-  ApiChatRoute: typeof ApiChatRoute
   ChannelsSectionRoute: typeof ChannelsSectionRoute
   FeaturedChannelRoute: typeof FeaturedChannelRoute
   FeaturedIndexRoute: typeof FeaturedIndexRoute
@@ -875,13 +862,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof YoutubeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/chat': {
-      id: '/api/chat'
-      path: '/api/chat'
-      fullPath: '/api/chat'
-      preLoaderRoute: typeof ApiChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/channels/$section': {
       id: '/channels/$section'
       path: '/channels/$section'
@@ -1010,7 +990,6 @@ const rootRouteChildren: RootRouteChildren = {
   VipRoute: VipRoute,
   VoiceChatRoute: VoiceChatRoute,
   YoutubeRoute: YoutubeRoute,
-  ApiChatRoute: ApiChatRoute,
   ChannelsSectionRoute: ChannelsSectionRoute,
   FeaturedChannelRoute: FeaturedChannelRoute,
   FeaturedIndexRoute: FeaturedIndexRoute,

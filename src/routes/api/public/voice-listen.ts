@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { requireApiUser } from "@/lib/auth-request.server";
 
-// Transcribes a visitor's 20-second mic turn so the next bot can answer it.
+// Transcribes a signed-in user's 20-second mic turn so the next bot can answer it.
 export const Route = createFileRoute("/api/public/voice-listen")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const auth = await requireApiUser(request);
+        if (!auth.ok) return auth.response;
         const apiKey = process.env["LOVABLE_API_KEY"];
         if (!apiKey) return new Response("not configured", { status: 500 });
         const form = await request.formData().catch(() => null);

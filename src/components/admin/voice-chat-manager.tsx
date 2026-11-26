@@ -236,7 +236,10 @@ export function SayNowForm({ locked = false }: { locked?: boolean } = {}) {
         try {
           const form = new FormData();
           form.append("file", file, file.name);
-          const res = await fetch("/api/public/voice-listen", { method: "POST", body: form });
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData.session?.access_token;
+          if (!token) { setNote("سجّل دخول المالك أولًا."); return; }
+          const res = await fetch("/api/public/voice-listen", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
           const heard = res.ok ? ((await res.json()) as { text?: string }).text?.trim() ?? "" : "";
           if (heard) { setSayText(heard); setNote("تم كتابة كلامك في مربع التجربة ✓"); }
           else setNote("تم التسجيل، لكن ما قدرنا نكتب الكلام؛ تكلم بوضوح وحاول مجددًا.");
@@ -427,7 +430,10 @@ export function SayNowForm({ locked = false }: { locked?: boolean } = {}) {
     try {
       const form = new FormData();
       form.append("file", audioFile, audioFile.name);
-      const res = await fetch("/api/public/voice-listen", { method: "POST", body: form });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) { setTesting(false); setNote("سجّل دخول المالك أولًا."); return; }
+      const res = await fetch("/api/public/voice-listen", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
       heard = res.ok ? ((await res.json()) as { text?: string }).text?.trim() ?? "" : "";
     } catch { /* handled below */ }
     setTesting(false);

@@ -1,12 +1,15 @@
-// Voice-changer TTS for the PIN-protected /mic page: the server re-checks the voice-panel PIN.
+// Voice-changer TTS for the owner-authenticated /mic page.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { speakWithFallback, VOICE_LIST, voiceDelivery } from "@/lib/voice-config";
 
 export const micSpeak = createServerFn({ method: "POST" })
-  .inputValidator((d) => z.object({ pin: z.string().max(20), text: z.string().trim().min(1).max(400), voice: z.string().max(40) }).parse(d))
-  .handler(async ({ data }) => {
-    if (data.pin !== "2121") throw new Error("الرقم السري غلط");
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ text: z.string().trim().min(1).max(400), voice: z.string().max(40) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) throw new Error("غير مسموح.");
     const apiKey = process.env["LOVABLE_API_KEY"];
     if (!apiKey) throw new Error("not configured");
     const voice = VOICE_LIST.some((v) => v.id === data.voice) ? data.voice : "Leda";

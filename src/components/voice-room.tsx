@@ -78,6 +78,8 @@ function VoiceRoomInner({ avatars, guestName, compact = false, onClose, micsOpen
   async function raiseHand() {
     if (handRef.current) { handRef.current = false; setHandUp(false); return; }
     setMicError("");
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) { setMicError("سجّل الدخول أولًا لاستخدام المايك."); return; }
     try {
       streamRef.current ??= await navigator.mediaDevices.getUserMedia({ audio: true });
       handRef.current = true; setHandUp(true);
@@ -104,7 +106,10 @@ function VoiceRoomInner({ avatars, guestName, compact = false, onClose, micsOpen
     const form = new FormData();
     form.append("file", new File([blob], `turn.${blob.type.includes("mp4") ? "m4a" : blob.type.includes("ogg") ? "ogg" : "webm"}`, { type: blob.type.split(";")[0] ?? "audio/webm" }));
     try {
-      const res = await fetch("/api/public/voice-listen", { method: "POST", body: form });
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) return "";
+      const res = await fetch("/api/public/voice-listen", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: form });
       return res.ok ? ((await res.json()) as { text?: string }).text ?? "" : "";
     } catch { return ""; }
   }

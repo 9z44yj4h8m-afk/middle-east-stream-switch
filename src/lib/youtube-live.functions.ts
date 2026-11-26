@@ -1,5 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { channels } from "@/lib/channels";
+
+const ALLOWED_YOUTUBE_CHANNELS = new Map<string, string>(
+  channels
+    .map((c) => c.youtubeChannelId)
+    .filter((id): id is string => typeof id === "string" && /^UC[\w-]{22}$/.test(id))
+    .map((id) => [id, id]),
+);
 
 /**
  * Resolve the video ID of a YouTube channel's current live broadcast, so the
@@ -9,8 +17,10 @@ import { z } from "zod";
 export const resolveYoutubeLive = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ channelId: z.string().regex(/^UC[\w-]{22}$/) }).parse(data))
   .handler(async ({ data }) => {
+    const allowedChannelId = ALLOWED_YOUTUBE_CHANNELS.get(data.channelId);
+    if (!allowedChannelId) return { videoId: null as string | null };
     try {
-      const res = await fetch(`https://www.youtube.com/channel/${data.channelId}/live`, {
+      const res = await fetch(`https://www.youtube.com/channel/${allowedChannelId}/live`, {
         headers: {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36",

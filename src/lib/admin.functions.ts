@@ -14,7 +14,7 @@ export const listMembers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context.supabase, context.userId);
-    const { data: profiles, error } = await context.supabase.from("profiles").select("user_id,display_name,last_login_at,created_at,suspended").order("created_at", { ascending: false });
+    const { data: profiles, error } = await context.supabase.from("profiles").select("user_id,display_name,last_login_at,created_at,suspended,library_approved").order("created_at", { ascending: false });
     if (error) throw error;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: users } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
@@ -94,7 +94,7 @@ export const createMember = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({ email: data.email.trim().toLowerCase(), password: data.password, email_confirm: true, user_metadata: { display_name: data.name } });
     if (error || !created.user) throw new Error(error?.message.includes("already") ? "البريد مسجّل مسبقًا." : "تعذّر إنشاء العضو.");
-    await supabaseAdmin.from("profiles").upsert({ user_id: created.user.id, display_name: data.name });
+    await supabaseAdmin.from("profiles").upsert({ user_id: created.user.id, display_name: data.name, library_approved: true });
     return { ok: true as const };
   });
 

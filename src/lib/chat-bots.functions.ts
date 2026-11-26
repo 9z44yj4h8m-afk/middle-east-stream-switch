@@ -106,12 +106,6 @@ async function post(name: string, body: string, roomId: string | null = null) {
   return !error;
 }
 
-// Real registered members' names (non-suspended, named) for bots to address.
-async function memberNames() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin.from("profiles").select("display_name").eq("suspended", false).neq("display_name", "").order("last_login_at", { ascending: false, nullsFirst: false }).limit(40);
-  return [...new Set((data ?? []).map((r) => r.display_name.trim()).filter(Boolean))];
-}
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const input = z.object({ body: z.string().trim().min(1).max(300), author: z.string().max(30).optional(), messageId: z.string().uuid().optional() });
 
@@ -143,15 +137,16 @@ export const botReply = createServerFn({ method: "POST" })
   });
 
 // Bots chatting among themselves.
-export const botBanter = createServerFn({ method: "POST" }).handler(async () => {
+export const botBanter = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+  const { data: profile } = await context.supabase.from("profiles").select("suspended").eq("user_id", context.userId).maybeSingle();
+  if (profile?.suspended) return { ok: false };
   const cfg = await loadConfig(); BOT_POOL = cfg.bots;
   if (!cfg.enabled || !cfg.banterEnabled) return { ok: false };
   const [a, b, c] = pick(3) as [Bot, Bot, Bot];
   const history = await recent();
-  const names = await memberNames();
-  const member = names.length ? names[Math.floor(Math.random() * names.length)] : "";
-  const target = member && Math.random() < 0.7 ? member : b.name;
-  const m1 = await say(cfg, `أنت ${a.name} في دردشة لموقع المغني لايف. شخصيتك: ${a.style}. ابدأ سالفة أو كمّل على آخر الكلام، ووجّه كلامك لـ${target}${target === member ? " (عضو مسجّل في الموقع، رحّب به أو اسأله عن رأيه)" : ""}. ${RULES}`, `آخر الرسائل:\n${history || "(لا يوجد)"}`);
+  const m1 = await say(cfg, `أنت ${a.name} في دردشة لموقع المغني لايف. شخصيتك: ${a.style}. ابدأ سالفة أو كمّل على آخر الكلام، ووجّه كلامك لـ${b.name}. ${RULES}`, `آخر الرسائل:\n${history || "(لا يوجد)"}`);
   if (!(await post(a.name, m1))) return { ok: false };
   await wait(3000);
   const m2 = await say(cfg, `أنت ${b.name}. شخصيتك: ${b.style}. رد على ${a.name}. ${RULES}`, `${a.name}: ${m1}`);

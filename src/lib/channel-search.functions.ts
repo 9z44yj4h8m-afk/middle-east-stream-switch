@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { findMatchingChannelIds } from "./channel-search.server.ts";
 
 const inputSchema = z.object({
@@ -18,8 +19,15 @@ const inputSchema = z.object({
 });
 
 export const searchChannelsWithAi = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input) => inputSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("suspended")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (profile?.suspended) throw new Error("هذا الحساب معطّل؛ تواصل مع الإدارة.");
     try {
       return { ids: await findMatchingChannelIds(data.query, data.channels) };
     } catch (error) {

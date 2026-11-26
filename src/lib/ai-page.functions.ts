@@ -1,61 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { useSession } from "@tanstack/react-start/server";
-import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { normalizeAiPageConfig, safeAiLogoPath, type AiPageConfig } from "./ai-page-config";
-
-type AiAdminSession = { unlocked?: boolean };
-
-function sessionConfig() {
-  return {
-    password: process.env["SITE_GATE_SECRET"]!,
-    name: "ai-admin-gate",
-    maxAge: 60 * 60 * 12,
-    cookie: { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" },
-  };
-}
-
-function pinMatches(input: string, expected: string): boolean {
-  const a = createHash("sha256").update(input, "utf8").digest();
-  const b = createHash("sha256").update(expected, "utf8").digest();
-  return timingSafeEqual(a, b);
-}
-
-async function assertAiAdmin() {
-  const session = await useSession<AiAdminSession>(sessionConfig());
-  if (!session.data.unlocked) throw new Error("أدخل الرقم السري أولاً.");
-}
-
-export const getAiAdminStatus = createServerFn({ method: "GET" }).handler(async () => {
-  const session = await useSession<AiAdminSession>(sessionConfig());
-  return { unlocked: !!session.data.unlocked };
-});
-
-export const unlockAiAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d) => z.object({ pin: z.string().max(40) }).parse(d))
-  .handler(async ({ data }) => {
-    const input = data.pin.trim();
-    const envPin = (process.env["GATE_PIN"] ?? "").trim();
-    const ok = pinMatches(input, "2121") || (!!envPin && pinMatches(input, envPin));
-    if (!ok) return { ok: false as const };
-    const session = await useSession<AiAdminSession>(sessionConfig());
-    await session.update({ unlocked: true });
-    return { ok: true as const };
-  });
-
-export const lockAiAdmin = createServerFn({ method: "POST" }).handler(async () => {
-  const session = await useSession<AiAdminSession>(sessionConfig());
-  await session.clear();
-  return { ok: true as const };
-});
-
-export const saveAiPageConfig = createServerFn({ method: "POST" })
-  .inputValidator((d) => z.object({ config: z.unknown() }).parse(d))
-  .handler(async ({ data }): Promise<{ ok: true; config: AiPageConfig }> => {
-    await assertAiAdmin();
-    return persistAiConfig(data.config);
-  });
 
 export const saveAiOwnerConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -109,15 +56,6 @@ function matchesMagic(bytes: Uint8Array, ext: string): boolean {
   }
   return false;
 }
-
-export const uploadAiLogo = createServerFn({ method: "POST" })
-  .inputValidator((d) =>
-    z.object({ contentType: z.string().max(40), base64: z.string().min(16).max(3_200_000) }).parse(d),
-  )
-  .handler(async ({ data }) => {
-    await assertAiAdmin();
-    return persistAiLogo(data);
-  });
 
 export const uploadAiOwnerLogo = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

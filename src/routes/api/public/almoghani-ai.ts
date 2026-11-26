@@ -8,6 +8,7 @@ import {
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 
+import { requireApiUser } from "@/lib/auth-request.server";
 import { channels } from "@/lib/channels";
 
 const CATALOG = channels
@@ -34,7 +35,7 @@ const RequestSchema = z.object({
   messages: z
     .array(
       z.object({
-        role: z.enum(["user", "assistant"]),
+        role: z.literal("user"),
         content: z.string().trim().min(1).max(4000),
       }),
     )
@@ -58,18 +59,8 @@ export const Route = createFileRoute("/api/public/almoghani-ai")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const authorization = request.headers.get("authorization");
-        if (authorization) {
-          const { createClient } = await import("@supabase/supabase-js");
-          const url = process.env["SUPABASE_URL"]; const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
-          if (!url || !key) return Response.json({ error: "تعذّر التحقق من الحساب." }, { status: 503 });
-          const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: authorization } } });
-          const { data: auth, error: authError } = await client.auth.getUser(authorization.replace(/^Bearer\s+/i, ""));
-          if (authError || !auth.user) return Response.json({ error: "سجّل الدخول مجددًا." }, { status: 401 });
-          const { data: profile, error: profileError } = await client.from("profiles").select("suspended").eq("user_id", auth.user.id).maybeSingle();
-          if (profileError) return Response.json({ error: "تعذّر التحقق من الحساب." }, { status: 503 });
-          if (profile?.suspended) return Response.json({ error: "هذا الحساب معطّل؛ تواصل مع الإدارة." }, { status: 403 });
-        }
+        const auth = await requireApiUser(request);
+        if (!auth.ok) return auth.response;
         let raw: unknown;
         try {
           raw = await request.json();
@@ -83,9 +74,6 @@ export const Route = createFileRoute("/api/public/almoghani-ai")({
         }
 
         const turns = parsed.data.messages;
-        if (turns[turns.length - 1]?.role !== "user") {
-          return Response.json({ error: "يجب أن تنتهي المحادثة برسالة من المستخدم." }, { status: 400 });
-        }
 
         let gatewayStream: Awaited<ReturnType<typeof streamResponse<"openai/gpt-6-astra">>>;
         try {
@@ -93,7 +81,7 @@ export const Route = createFileRoute("/api/public/almoghani-ai")({
             {
               model: "openai/gpt-6-astra",
               instructions: INSTRUCTIONS,
-              input: turns.map((m) => ({ role: m.role, content: m.content })),
+              input: turns.map((m) => ({ role: "user" as const, content: m.content })),
               reasoning: { effort: "low" },
             },
             { signal: request.signal },

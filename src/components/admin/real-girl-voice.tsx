@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
 import { micSpeak } from "@/lib/mic-voice.functions";
 import { FEMALE_VOICE_PROFILES } from "@/lib/voice-config";
 
@@ -40,8 +41,12 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
     try {
       const fd = new FormData();
       fd.append("file", new File([blob], blob.type.includes("mp4") ? "v.m4a" : "v.webm", { type: blob.type || "audio/mp4" }));
-      const r = await fetch("/api/public/voice-listen", { method: "POST", body: fd });
-      const j = (await r.json()) as { text?: string };
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("سجّل دخول المالك أولًا.");
+      const r = await fetch("/api/public/voice-listen", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+      const j = (await r.json()) as { text?: string; error?: string };
+      if (!r.ok) throw new Error(j.error || "تعذّر تحويل الصوت.");
       const said = (j.text ?? "").trim();
       if (!said) throw new Error("ما سمعت كلام واضح، جرّب مرة ثانية.");
       setText(said);
@@ -56,7 +61,7 @@ export function RealGirlVoice({ bare = false }: { bare?: boolean }) {
     if (!said) { setErr("اكتب أو سجّل كلامك أولًا."); return; }
     setState("busy"); setErr(""); setClip(null);
     try {
-      const { audio } = await speak({ data: { text: said, voice, pin: "2121" } });
+      const { audio } = await speak({ data: { text: said, voice } });
       const bin = atob(audio); const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
       const url = URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));

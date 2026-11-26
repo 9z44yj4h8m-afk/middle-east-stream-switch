@@ -31,11 +31,11 @@ export function useChatBans() {
     refetchInterval: 20000,
   });
 }
-export function useMyChatBan(name: string) {
+export function useMyChatBan(name: string, signedIn = false) {
   const n = name.trim();
   return useQuery({
-    queryKey: ["my-chat-ban", n.toLowerCase()],
-    enabled: n.length > 0,
+    queryKey: ["my-chat-ban", signedIn ? n.toLowerCase() : ""],
+    enabled: signedIn && n.length > 0,
     queryFn: async () => { const { data } = await supabase.rpc("get_my_chat_ban", { p_name: n }); const b = data?.[0]; return b ? ({ name: b.name, kind: b.kind, until: b.until, reason: "" } as ChatBan) : null; },
     refetchInterval: 20000,
   });
