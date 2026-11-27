@@ -1,8 +1,36 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState, type FormEvent } from "react";
-import { Link2, MonitorPlay, Play, Radio, RefreshCw, ShieldCheck, X } from "lucide-react";
-import { BthPlayer, type BthPlaybackState } from "@/components/bth-player";
-import { BTH_PROVIDERS, parseBthStream, type BthProviderChip, type BthStream } from "@/lib/bth-stream";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  Camera,
+  Link2,
+  Lock,
+  Maximize2,
+  Mic,
+  MicOff,
+  Minimize2,
+  MonitorPlay,
+  MonitorUp,
+  Play,
+  Radio,
+  RefreshCw,
+  ShieldCheck,
+  Square,
+  X,
+} from "lucide-react";
+import { BthPlayer, type BthPlaybackState, type BthPlayerHandle } from "@/components/bth-player";
+import {
+  BTH_PROVIDERS,
+  normalizeBthPublicBroadcast,
+  parseBthStream,
+  type BthProviderChip,
+  type BthPublicBroadcast,
+  type BthStream,
+} from "@/lib/bth-stream";
+import { checkBthOwner, saveBthPublicBroadcast } from "@/lib/bth-broadcast.functions";
+import { BTH_NOTIFY_CHANNEL, notifyBthPublicRefresh, startBthBroadcaster, startBthViewer } from "@/lib/bth-webrtc";
+import { loginOwner } from "@/lib/admin-login.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/bth")({
   head: () => ({
@@ -21,25 +49,133 @@ export const Route = createFileRoute("/bth")({
 
 const STATUS_COPY: Record<BthPlaybackState, { ar: string; code: string }> = {
   idle: { ar: "جاهز", code: "IDLE" },
+  preview: { ar: "معاينة", code: "PRE" },
   loading: { ar: "اتصال", code: "SYNC" },
   live: { ar: "مباشر", code: "LIVE" },
   error: { ar: "متوقف", code: "ERR" },
 };
 
 function BroadcastPage() {
+  const playerRef = useRef<BthPlayerHandle>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const broadcasterRef = useRef<{ stop: () => void } | null>(null);
+  const viewerRef = useRef<{ stop: () => void } | null>(null);
+  const localMediaRef = useRef<MediaStream | null>(null);
+  const isHostingRef = useRef(false);
+
+  const checkOwnerFn = useServerFn(checkBthOwner);
+  const saveBroadcastFn = useServerFn(saveBthPublicBroadcast);
+  const ownerLoginFn = useServerFn(loginOwner);
+
   const [input, setInput] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<BthProviderChip["id"]>("youtube");
   const [stream, setStream] = useState<BthStream | null>(null);
+  const [captureSource, setCaptureSource] = useState<"screen" | "camera">("screen");
+  const [micEnabled, setMicEnabled] = useState(false);
+  const [localMedia, setLocalMedia] = useState<MediaStream | null>(null);
+  const [remoteMedia, setRemoteMedia] = useState<MediaStream | null>(null);
+  const [publicState, setPublicState] = useState<BthPublicBroadcast | null>(null);
+  const [audienceLive, setAudienceLive] = useState(false);
+  const [peerCount, setPeerCount] = useState(0);
+  const [minimized, setMinimized] = useState(false);
   const [playbackState, setPlaybackState] = useState<BthPlaybackState>("idle");
   const [muted, setMuted] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [busyAction, setBusyAction] = useState<"capture" | "publish" | null>(null);
   const [error, setError] = useState("");
+  const [studioError, setStudioError] = useState("");
+  const [statusNotice, setStatusNotice] = useState("");
+  const [showAuthBox, setShowAuthBox] = useState(false);
+  const [ownerPassword, setOwnerPassword] = useState("");
+  const [authError, setAuthError] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [pendingPublish, setPendingPublish] = useState(false);
 
   const activeChip = BTH_PROVIDERS.find((p) => p.id === selectedProvider) ?? BTH_PROVIDERS[0];
   const statusChip = STATUS_COPY[playbackState];
 
+  const stopViewer = useCallback(() => {
+    viewerRef.current?.stop();
+    viewerRef.current = null;
+    setRemoteMedia(null);
+  }, []);
+
+  const stopLocalMedia = useCallback(() => {
+    broadcasterRef.current?.stop();
+    broadcasterRef.current = null;
+    localMediaRef.current?.getTracks().forEach((t) => t.stop());
+    localMediaRef.current = null;
+    setLocalMedia(null);
+    setPeerCount(0);
+  }, []);
+
+  const loadPublicBroadcast = useCallback(async () => {
+    if (isHostingRef.current) return;
+    const { data } = await supabase.from("site_settings").select("value").eq("key", "bth_public_stream").maybeSingle();
+    const normalized = normalizeBthPublicBroadcast(data?.value);
+    setPublicState(normalized);
+    stopViewer();
+    if (!normalized || !normalized.active) return;
+    if (normalized.mode === "link") {
+      const host = typeof window === "undefined" ? "almoghani.net" : window.location.hostname;
+      const parsed = parseBthStream(normalized.sourceUrl, host, true);
+      if (parsed.ok) {
+        setStream(parsed.stream);
+        setRefreshKey((k) => k + 1);
+      }
+      return;
+    }
+    setStream(null);
+    setPlaybackState("loading");
+    viewerRef.current = startBthViewer(normalized.sessionId, {
+      onStream: (media) => {
+        setError("");
+        setRemoteMedia(media);
+      },
+      onEnded: () => {
+        setRemoteMedia(null);
+        setPlaybackState("idle");
+        setStatusNotice("انتهى البث المباشر من المذيع.");
+      },
+      onError: (msg) => {
+        setRemoteMedia(null);
+        setError(msg);
+        setPlaybackState("error");
+      },
+    });
+  }, [stopViewer]);
+
+  useEffect(() => {
+    void loadPublicBroadcast();
+    const ch = supabase
+      .channel(BTH_NOTIFY_CHANNEL, { config: { broadcast: { self: false } } })
+      .on("broadcast", { event: "public-refresh" }, () => {
+        void loadPublicBroadcast();
+      })
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(ch);
+      stopViewer();
+      stopLocalMedia();
+    };
+  }, [loadPublicBroadcast, stopViewer, stopLocalMedia]);
+
+  useEffect(() => {
+    if (!audienceLive) return;
+    const onBeforeUnload = (ev: BeforeUnloadEvent) => {
+      ev.preventDefault();
+      ev.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [audienceLive]);
+
   const startStream = (rawUrl: string, nextMuted: boolean) => {
+    stopViewer();
+    stopLocalMedia();
+    isHostingRef.current = false;
+    setAudienceLive(false);
+    setStatusNotice("");
     const host = typeof window === "undefined" ? "almoghani.net" : window.location.hostname;
     const parsed = parseBthStream(rawUrl, host, nextMuted);
     if (!parsed.ok) {
@@ -50,6 +186,199 @@ function BroadcastPage() {
     setStream(parsed.stream);
     if (parsed.stream.provider !== "direct") setSelectedProvider(parsed.stream.provider);
     setRefreshKey((k) => k + 1);
+  };
+
+  const handleStartPreview = async () => {
+    setError("");
+    setStudioError("");
+    setStatusNotice("");
+    setBusyAction("capture");
+    stopViewer();
+    stopLocalMedia();
+    setStream(null);
+    setAudienceLive(false);
+    isHostingRef.current = false;
+    try {
+      let media: MediaStream;
+      if (captureSource === "screen") {
+        if (!navigator.mediaDevices?.getDisplayMedia) {
+          setStudioError("مشاركة الشاشة غير متاحة على متصفح الآيفون؛ اختر «الكاميرا» أو الصق رابط بث مباشر بالأسفل.");
+          return;
+        }
+        media = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: { ideal: 30 } },
+          audio: true,
+        });
+      } else {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          setStudioError("الوصول للكاميرا غير متاح في هذا المتصفح.");
+          return;
+        }
+        media = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: micEnabled,
+        });
+      }
+
+      if (captureSource === "screen" && micEnabled && navigator.mediaDevices?.getUserMedia) {
+        try {
+          const micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+          micStream.getAudioTracks().forEach((track) => media.addTrack(track));
+        } catch {
+          setStatusNotice("بدأت معاينة الشاشة بدون مايكروفون بسبب عدم منح الإذن.");
+        }
+      }
+
+      const primaryVideo = media.getVideoTracks()[0];
+      if (primaryVideo) {
+        primaryVideo.addEventListener(
+          "ended",
+          () => {
+            if (isHostingRef.current) void handleStopAudience();
+            stopLocalMedia();
+            setPlaybackState("idle");
+          },
+          { once: true },
+        );
+      }
+
+      localMediaRef.current = media;
+      setLocalMedia(media);
+      setStatusNotice("المعاينة جاهزة — اضغط «بدء البث للجمهور» عندما تكون مستعداً.");
+    } catch (e) {
+      const name = e instanceof Error ? e.name : "";
+      setStudioError(
+        name === "NotAllowedError"
+          ? "لم تسمح بمشاركة الشاشة أو الكاميرا. أعد الضغط على «بداية البث» ومنح الإذن."
+          : "تعذر فتح الشاشة أو الكاميرا حالياً. تحقق من الأذونات وحاول مجدداً.",
+      );
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const executePublishToAudience = async () => {
+    setError("");
+    setStudioError("");
+    setStatusNotice("");
+    const activeMedia = localMediaRef.current;
+    const activeStream = stream;
+    if (!activeMedia && !activeStream) {
+      setStudioError("اضغط «بداية البث» لاختيار الشاشة أو الكاميرا، أو شغّل رابط بث بالأسفل أولاً.");
+      return;
+    }
+
+    setBusyAction("publish");
+    try {
+      if (activeMedia) {
+        const sessionId = `bth_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+        const res = await saveBroadcastFn({
+          data: { action: "start_webrtc", sessionId, source: captureSource },
+        });
+        broadcasterRef.current?.stop();
+        broadcasterRef.current = startBthBroadcaster(activeMedia, sessionId, setPeerCount);
+        isHostingRef.current = true;
+        setPublicState(res.state);
+        setAudienceLive(true);
+        setStatusNotice("البث مباشر للجمهور الآن — أي زائر يفتح almoghani.net/bth سيشاهد بثك مباشرة.");
+      } else if (activeStream) {
+        const res = await saveBroadcastFn({
+          data: { action: "start_link", sourceUrl: activeStream.sourceUrl },
+        });
+        isHostingRef.current = true;
+        setPublicState(res.state);
+        setAudienceLive(true);
+        await notifyBthPublicRefresh();
+        setStatusNotice("تم نشر البث للجمهور على صفحة البث.");
+      }
+    } catch (e) {
+      setStudioError(e instanceof Error ? e.message : "تعذر بدء البث للجمهور حالياً.");
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleStartAudience = async () => {
+    setError("");
+    setStudioError("");
+    if (!localMediaRef.current && !stream) {
+      setStudioError("اضغط «بداية البث» لاختيار الشاشة أو الكاميرا، أو شغّل رابط بث بالأسفل أولاً.");
+      return;
+    }
+    setBusyAction("publish");
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session) {
+        const check = await checkOwnerFn();
+        if (check.isAdmin) {
+          await executePublishToAudience();
+          return;
+        }
+      }
+      setPendingPublish(true);
+      setShowAuthBox(true);
+      setAuthError("");
+    } catch {
+      setPendingPublish(true);
+      setShowAuthBox(true);
+      setAuthError("");
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleStopAudience = async () => {
+    setBusyAction("publish");
+    try {
+      broadcasterRef.current?.stop();
+      broadcasterRef.current = null;
+      isHostingRef.current = false;
+      setAudienceLive(false);
+      setPeerCount(0);
+      const res = await saveBroadcastFn({ data: { action: "stop" } });
+      setPublicState(res.state);
+      await notifyBthPublicRefresh();
+      setStatusNotice("تم إنهاء البث للجمهور.");
+    } catch (e) {
+      setStudioError(e instanceof Error ? e.message : "تعذر إنهاء البث.");
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
+  const handleOwnerLogin = async (ev: FormEvent<HTMLFormElement>) => {
+    ev.preventDefault();
+    if (!ownerPassword.trim()) {
+      setAuthError("أدخل كلمة مرور المالك.");
+      return;
+    }
+    setAuthBusy(true);
+    setAuthError("");
+    try {
+      const res = await ownerLoginFn({ data: { password: ownerPassword.trim() } });
+      if (!res.ok) {
+        setAuthError("كلمة المرور غير صحيحة.");
+        return;
+      }
+      const { error: setErr } = await supabase.auth.setSession({
+        access_token: res.access_token,
+        refresh_token: res.refresh_token,
+      });
+      if (setErr) {
+        setAuthError("تعذر تفعيل الجلسة؛ حاول مرة أخرى.");
+        return;
+      }
+      setOwnerPassword("");
+      setShowAuthBox(false);
+      if (pendingPublish) {
+        setPendingPublish(false);
+        await executePublishToAudience();
+      }
+    } catch {
+      setAuthError("تعذر التحقق حالياً؛ حاول مرة أخرى.");
+    } finally {
+      setAuthBusy(false);
+    }
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -67,8 +396,16 @@ function BroadcastPage() {
   };
 
   const handleRefresh = () => {
+    if (localMedia) {
+      void handleStartPreview();
+      return;
+    }
     if (!stream) {
-      if (input.trim()) startStream(input, muted);
+      if (input.trim()) {
+        startStream(input, muted);
+      } else {
+        void loadPublicBroadcast();
+      }
       return;
     }
     setError("");
@@ -76,19 +413,53 @@ function BroadcastPage() {
   };
 
   const handleClear = () => {
+    if (audienceLive) void handleStopAudience();
+    stopViewer();
+    stopLocalMedia();
     setInput("");
     setStream(null);
     setError("");
+    setStudioError("");
+    setStatusNotice("");
     setMuted(true);
     setPlaybackState("idle");
   };
 
-  const broadcastHeading = stream ? `بث ${stream.label}` : "شاشتي — البث الشخصي";
-  const broadcastSubtitle = stream
-    ? playbackState === "error"
-      ? "تعذر تشغيل الرابط الحالي؛ أعد المحاولة أو استبدل الرابط"
-      : "رابط نشط لهذه الجلسة فقط"
-    : "استوديو البث الشخصي — الصق رابط البث للبدء";
+  const activeMediaStream = localMedia ?? remoteMedia;
+  const isLocalPreview = Boolean(localMedia);
+  const activeMediaLabel = localMedia
+    ? captureSource === "camera"
+      ? "الكاميرا"
+      : "الشاشة"
+    : publicState?.active
+      ? publicState.label
+      : "بث مباشر";
+
+  const broadcastHeading = audienceLive
+    ? "البث مباشر للجمهور الآن"
+    : localMedia
+      ? captureSource === "camera"
+        ? "معاينة الكاميرا — خاص بك"
+        : "معاينة الشاشة — خاص بك"
+      : remoteMedia && publicState?.active
+        ? publicState.label
+        : stream
+          ? `بث ${stream.label}`
+          : "شاشتي — البث الشخصي";
+
+  const broadcastSubtitle = audienceLive
+    ? peerCount > 0
+      ? `بث مباشر متاح للجمهور (${peerCount} متصل)`
+      : "بثك مفتوح الآن على almoghani.net/bth للجمهور"
+    : localMedia
+      ? "معاينة خاصة قبل الظهور للجمهور — اضغط «بدء البث للجمهور» للنشر"
+      : stream
+        ? playbackState === "error"
+          ? "تعذر تشغيل الرابط الحالي؛ أعد المحاولة أو استبدل الرابط"
+          : publicState?.active && publicState.mode === "link"
+            ? "البث الرئيسي النشط للجمهور"
+            : "رابط نشط لهذه الجلسة فقط"
+        : "اضغط «بداية البث» أو الصق رابط البث بالأسفل للبدء";
 
   return (
     <div className="bth-studio" dir="rtl">
@@ -128,7 +499,14 @@ function BroadcastPage() {
 
       <main className="bth-main">
         <BthPlayer
+          ref={playerRef}
           stream={stream}
+          mediaStream={activeMediaStream}
+          mediaLabel={activeMediaLabel}
+          isLocalPreview={isLocalPreview}
+          isAudienceLive={audienceLive || Boolean(remoteMedia)}
+          minimized={minimized}
+          onMinimizedChange={setMinimized}
           refreshKey={refreshKey}
           muted={muted}
           onToggleMute={handleToggleMute}
@@ -136,13 +514,141 @@ function BroadcastPage() {
           onStateChange={setPlaybackState}
         />
 
+        <section className="bth-controls-panel" aria-label="أزرار التحكم بالبث">
+          <div className="bth-source-switch" role="group" aria-label="مصدر البث من جهازك">
+            <button
+              type="button"
+              className="bth-provider-chip"
+              data-active={captureSource === "screen" ? "true" : "false"}
+              aria-pressed={captureSource === "screen"}
+              disabled={busyAction !== null || audienceLive}
+              onClick={() => setCaptureSource("screen")}
+            >
+              <MonitorUp className="h-3.5 w-3.5" />
+              <span>الشاشة</span>
+            </button>
+            <button
+              type="button"
+              className="bth-provider-chip"
+              data-active={captureSource === "camera" ? "true" : "false"}
+              aria-pressed={captureSource === "camera"}
+              disabled={busyAction !== null || audienceLive}
+              onClick={() => setCaptureSource("camera")}
+            >
+              <Camera className="h-3.5 w-3.5" />
+              <span>الكاميرا</span>
+            </button>
+            <button
+              type="button"
+              className="bth-provider-chip"
+              data-active={micEnabled ? "true" : "false"}
+              aria-pressed={micEnabled}
+              disabled={busyAction !== null || audienceLive}
+              onClick={() => setMicEnabled((v) => !v)}
+            >
+              {micEnabled ? <Mic className="h-3.5 w-3.5" /> : <MicOff className="h-3.5 w-3.5" />}
+              <span>{micEnabled ? "المايك مفعّل" : "المايك مغلق"}</span>
+            </button>
+          </div>
+
+          <div className="bth-action-grid">
+            <button
+              type="button"
+              className="bth-action-btn bth-action-silver"
+              disabled={busyAction !== null || audienceLive}
+              onClick={() => void handleStartPreview()}
+            >
+              <MonitorPlay className="h-4 w-4" />
+              <span>{busyAction === "capture" ? "جارٍ التجهيز..." : "بداية البث"}</span>
+            </button>
+
+            {audienceLive ? (
+              <button
+                type="button"
+                className="bth-action-btn bth-action-live"
+                disabled={busyAction !== null}
+                onClick={() => void handleStopAudience()}
+              >
+                <Square className="h-4 w-4 fill-current" />
+                <span>إنهاء بث الجمهور</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="bth-gold-btn bth-action-btn"
+                disabled={busyAction !== null}
+                onClick={() => void handleStartAudience()}
+              >
+                <Radio className="h-4 w-4" />
+                <span>{busyAction === "publish" ? "جارٍ البدء..." : "بدء البث للجمهور"}</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="bth-action-btn bth-action-silver"
+              onClick={() => playerRef.current?.toggleMinimize()}
+            >
+              {minimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
+              <span>{minimized ? "تكبير الشاشة" : "تصغير الشاشة"}</span>
+            </button>
+          </div>
+
+          {statusNotice && (
+            <p role="status" className="bth-studio-notice">
+              {statusNotice}
+            </p>
+          )}
+
+          {studioError && (
+            <p role="alert" className="bth-form-error">
+              {studioError}
+            </p>
+          )}
+
+          {showAuthBox && (
+            <form onSubmit={handleOwnerLogin} className="bth-owner-auth">
+              <div className="bth-owner-auth-head">
+                <span className="bth-owner-auth-title">
+                  <Lock className="h-4 w-4" />
+                  <span>تأكيد دخول المالك لبدء البث للجمهور</span>
+                </span>
+                <button type="button" className="bth-ghost-btn bth-close-mini" onClick={() => setShowAuthBox(false)} aria-label="إغلاق">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="bth-input-row">
+                <input
+                  type="password"
+                  value={ownerPassword}
+                  onChange={(e) => {
+                    setOwnerPassword(e.target.value);
+                    if (authError) setAuthError("");
+                  }}
+                  placeholder="كلمة مرور المالك"
+                  autoComplete="current-password"
+                  className="bth-url-input"
+                />
+                <button type="submit" disabled={authBusy} className="bth-gold-btn bth-play-submit">
+                  <span>{authBusy ? "جارٍ التحقق..." : "تأكيد والبدء"}</span>
+                </button>
+              </div>
+              {authError && (
+                <p role="alert" className="bth-form-error">
+                  {authError}
+                </p>
+              )}
+            </form>
+          )}
+        </section>
+
         <section className="bth-info-bar" aria-label="حالة البث الحالي">
           <div className="bth-info-copy">
             <h1>{broadcastHeading}</h1>
             <p>{broadcastSubtitle}</p>
           </div>
           <div className="bth-info-actions">
-            {stream && (
+            {(stream || localMedia || audienceLive) && (
               <button type="button" className="bth-ghost-btn" onClick={handleClear}>
                 <X className="h-4 w-4" />
                 <span>إيقاف</span>
@@ -152,7 +658,6 @@ function BroadcastPage() {
               type="button"
               className="bth-refresh-btn"
               onClick={handleRefresh}
-              disabled={!stream && !input.trim()}
               aria-label="إعادة تشغيل البث"
               title="إعادة تشغيل البث"
             >

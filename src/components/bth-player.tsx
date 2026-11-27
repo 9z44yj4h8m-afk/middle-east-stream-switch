@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Maximize, PictureInPicture2, Radio, RefreshCw, Volume2, VolumeX } from "lucide-react";
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
+import { AlertTriangle, Maximize, Maximize2, Minimize2, PictureInPicture2, Radio, RefreshCw, Volume2, VolumeX } from "lucide-react";
 import {
   supportsFloatingVideo,
   toggleFloatingVideo,
@@ -7,10 +7,21 @@ import {
   type FloatingVideoEl,
 } from "@/lib/bth-stream";
 
-export type BthPlaybackState = "idle" | "loading" | "live" | "error";
+export type BthPlaybackState = "idle" | "preview" | "loading" | "live" | "error";
+
+export type BthPlayerHandle = {
+  toggleMinimize: () => void;
+};
 
 type Props = {
+  ref?: Ref<BthPlayerHandle>;
   stream: BthStream | null;
+  mediaStream: MediaStream | null;
+  mediaLabel?: string;
+  isLocalPreview?: boolean;
+  isAudienceLive?: boolean;
+  minimized: boolean;
+  onMinimizedChange: (next: boolean) => void;
   refreshKey: number;
   muted: boolean;
   onToggleMute: () => void;
@@ -18,7 +29,21 @@ type Props = {
   onStateChange: (state: BthPlaybackState) => void;
 };
 
-export function BthPlayer({ stream, refreshKey, muted, onToggleMute, onRefresh, onStateChange }: Props) {
+export function BthPlayer({
+  ref,
+  stream,
+  mediaStream,
+  mediaLabel,
+  isLocalPreview = false,
+  isAudienceLive = false,
+  minimized,
+  onMinimizedChange,
+  refreshKey,
+  muted,
+  onToggleMute,
+  onRefresh,
+  onStateChange,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -26,6 +51,9 @@ export function BthPlayer({ stream, refreshKey, muted, onToggleMute, onRefresh, 
   const [errorMsg, setErrorMsg] = useState("");
   const [notice, setNotice] = useState("");
   const [pipReady, setPipReady] = useState(false);
+
+  const hasActiveMedia = Boolean(mediaStream || stream);
+  const activeTag = mediaStream ? mediaLabel || "البث المباشر" : stream?.label;
 
   const updateStatus = (next: BthPlaybackState) => {
     setStatus(next);
@@ -35,6 +63,26 @@ export function BthPlayer({ stream, refreshKey, muted, onToggleMute, onRefresh, 
   useEffect(() => {
     setNotice("");
     setErrorMsg("");
+
+    if (mediaStream) {
+      const video = videoRef.current;
+      if (video) {
+        video.srcObject = mediaStream;
+        video.muted = isLocalPreview ? true : muted;
+        const onMeta = () => setPipReady(supportsFloatingVideo(video as FloatingVideoEl, document));
+        video.addEventListener("loadedmetadata", onMeta);
+        void video.play().catch(() => {});
+        onMeta();
+        updateStatus(isAudienceLive || !isLocalPreview ? "live" : "preview");
+        return () => {
+          video.removeEventListener("loadedmetadata", onMeta);
+          video.srcObject = null;
+        };
+      }
+      updateStatus(isAudienceLive || !isLocalPreview ? "live" : "preview");
+      return;
+    }
+
     if (!stream) {
       setPipReady(false);
       updateStatus("idle");
@@ -117,10 +165,13 @@ export function BthPlayer({ stream, refreshKey, muted, onToggleMute, onRefresh, 
       video.removeAttribute("src");
       video.load();
     };
-  }, [stream, refreshKey]);
+  }, [mediaStream, isLocalPreview, isAudienceLive, stream, refreshKey]);
 
   useEffect(() => {
-    if (stream?.kind === "video" && videoRef.current) {
+    if (mediaStream && videoRef.current) {
+      videoRef.current.muted = isLocalPreview ? true : muted;
+      if (!isLocalPreview && !muted) void videoRef.current.play().catch(() => setNotice("اضغط داخل المشغل لتفعيل الصوت."));
+    } else if (stream?.kind === "video" && videoRef.current) {
       videoRef.current.muted = muted;
       if (!muted) void videoRef.current.play().catch(() => setNotice("اضغط داخل المشغل لتفعيل الصوت."));
     } else if (stream?.kind === "embed" && stream.canJsMute && iframeRef.current?.contentWindow) {
@@ -129,7 +180,7 @@ export function BthPlayer({ stream, refreshKey, muted, onToggleMute, onRefresh, 
         "https://www.youtube.com",
       );
     }
-  }, [muted, stream]);
+  }, [muted, stream, mediaStream, isLocalPreview]);
 
   const handleFullscreen = () => {
     setNotice("");
@@ -153,22 +204,35 @@ export function BthPlayer({ stream, refreshKey, muted, onToggleMute, onRefresh, 
 
   const handlePiP = () => {
     setNotice("");
-    if (stream?.kind !== "video" || !videoRef.current || !pipReady) {
-      setNotice("النافذة الصغيرة تعمل مع روابط البث المباشر (HLS/MP4) في المتصفحات الداعمة.");
+    const canNativePip = Boolean((mediaStream || stream?.kind === "video") && videoRef.current && pipReady);
+    if (canNativePip && videoRef.current) {
+      void toggleFloatingVideo(videoRef.current as FloatingVideoEl, document).catch(() => {
+        onMinimizedChange(!minimized);
+      });
       return;
     }
-    void toggleFloatingVideo(videoRef.current as FloatingVideoEl, document).catch(() => {
-      setNotice("تعذر فتح النافذة الصغيرة حالياً.");
-    });
+    onMinimizedChange(!minimized);
   };
 
+  useImperativeHandle(ref, () => ({ toggleMinimize: handlePiP }), [mediaStream, stream, pipReady, minimized]);
+
   const signalLabel =
-    status === "live" ? "إشارة متصلة" : status === "loading" ? "جارٍ تحميل البث" : status === "error" ? "انقطاع الإشارة" : "بانتظار الإشارة";
+    status === "live"
+      ? isAudienceLive
+        ? "مباشر للجمهور"
+        : "إشارة متصلة"
+      : status === "preview"
+        ? "معاينة خاصة — لم يبدأ للجمهور"
+        : status === "loading"
+          ? "جارٍ تحميل البث"
+          : status === "error"
+            ? "انقطاع الإشارة"
+            : "بانتظار الإشارة";
 
   return (
-    <section className="bth-player-card" aria-label="مشغل البث المباشر">
+    <section className="bth-player-card" data-minimized={minimized ? "true" : "false"} aria-label="مشغل البث المباشر">
       <div ref={containerRef} className="bth-stage">
-        {!stream && (
+        {!hasActiveMedia && (
           <div className="bth-idle-stage">
             <div className="bth-rings" aria-hidden="true">
               <span className="bth-ring bth-ring-1" />
@@ -179,11 +243,11 @@ export function BthPlayer({ stream, refreshKey, muted, onToggleMute, onRefresh, 
               <Radio className="h-7 w-7" />
             </div>
             <p className="bth-idle-title">لا يوجد بث نشط حالياً</p>
-            <p className="bth-idle-sub">الصق رابط بثك من YouTube أو Kick أو Twitch أو X بالأسفل لبدء العرض فوراً</p>
+            <p className="bth-idle-sub">اضغط «بداية البث» لمعاينة الشاشة أو الكاميرا، أو الصق رابط بثك بالأسفل</p>
           </div>
         )}
 
-        {stream?.kind === "embed" && (
+        {!mediaStream && stream?.kind === "embed" && (
           <iframe
             ref={iframeRef}
             key={`${stream.embedUrl}-${refreshKey}`}
@@ -201,16 +265,22 @@ export function BthPlayer({ stream, refreshKey, muted, onToggleMute, onRefresh, 
           />
         )}
 
-        {stream?.kind === "video" && (
+        {(mediaStream || stream?.kind === "video") && (
           <video
             ref={videoRef}
-            controls
-            muted={muted}
+            controls={!isLocalPreview}
+            muted={isLocalPreview ? true : muted}
             autoPlay
             playsInline
             className="bth-media"
-            aria-label={`بث ${stream.label}`}
+            aria-label={activeTag ? `بث ${activeTag}` : "معاينة البث المباشر"}
           />
+        )}
+
+        {hasActiveMedia && (isLocalPreview || isAudienceLive) && (
+          <span className="bth-stage-badge" data-live={isAudienceLive ? "true" : "false"}>
+            {isAudienceLive ? "مباشر للجمهور" : "معاينة الشاشة — خاص بك"}
+          </span>
         )}
 
         {status === "error" && errorMsg && (
@@ -230,14 +300,14 @@ export function BthPlayer({ stream, refreshKey, muted, onToggleMute, onRefresh, 
         <div className="bth-signal-indicator" data-state={status}>
           <span className="bth-signal-dot" aria-hidden="true" />
           <span>{signalLabel}</span>
-          {stream && <span className="bth-provider-tag">{stream.label}</span>}
+          {activeTag && <span className="bth-provider-tag">{activeTag}</span>}
         </div>
 
         <div className="bth-player-tools">
           <button
             type="button"
             className="bth-tool-btn"
-            disabled={!stream}
+            disabled={!hasActiveMedia || isLocalPreview}
             onClick={onToggleMute}
             aria-label={muted ? "تشغيل الصوت" : "كتم الصوت"}
             title={muted ? "تشغيل الصوت" : "كتم الصوت"}
@@ -247,17 +317,16 @@ export function BthPlayer({ stream, refreshKey, muted, onToggleMute, onRefresh, 
           <button
             type="button"
             className="bth-tool-btn"
-            disabled={!pipReady}
             onClick={handlePiP}
-            aria-label="نافذة فيديو صغيرة"
-            title="نافذة فيديو صغيرة"
+            aria-label={minimized ? "تكبير الشاشة" : "تصغير الشاشة"}
+            title={minimized ? "تكبير الشاشة" : "تصغير الشاشة"}
           >
-            <PictureInPicture2 className="h-4 w-4" />
+            {minimized ? <Maximize2 className="h-4 w-4" /> : pipReady ? <PictureInPicture2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
           </button>
           <button
             type="button"
             className="bth-tool-btn"
-            disabled={!stream}
+            disabled={!hasActiveMedia}
             onClick={handleFullscreen}
             aria-label="ملء الشاشة"
             title="ملء الشاشة"

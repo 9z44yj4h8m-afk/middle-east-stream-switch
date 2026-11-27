@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseBthStream } from "./bth-stream";
+import { normalizeBthPublicBroadcast, parseBthStream } from "./bth-stream";
 
 describe("parseBthStream", () => {
   it("parses YouTube watch, short, and live links using youtube.com/embed", () => {
@@ -53,5 +53,32 @@ describe("parseBthStream", () => {
     expect(parseBthStream("http://insecure.example.com/live.m3u8", "almoghani.net").ok).toBe(false);
     expect(parseBthStream("not-a-url", "almoghani.net").ok).toBe(false);
     expect(parseBthStream("https://example.com/page", "almoghani.net").ok).toBe(false);
+  });
+
+  it("normalizes valid public broadcast payloads and rejects unsafe ones", () => {
+    const linkState = normalizeBthPublicBroadcast({
+      active: true,
+      mode: "link",
+      sourceUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      label: "YouTube",
+      startedAt: "2026-11-27T12:00:00Z",
+    });
+    expect(linkState).toMatchObject({ active: true, mode: "link", label: "YouTube" });
+
+    const rtcState = normalizeBthPublicBroadcast({
+      active: true,
+      mode: "webrtc",
+      sessionId: "bth_session_12345",
+      source: "screen",
+      startedAt: "2026-11-27T12:00:00Z",
+    });
+    expect(rtcState).toMatchObject({ active: true, mode: "webrtc", source: "screen", sessionId: "bth_session_12345" });
+
+    expect(normalizeBthPublicBroadcast({ active: true, mode: "link", sourceUrl: "javascript:alert(1)" })).toBeNull();
+    expect(normalizeBthPublicBroadcast({ active: true, mode: "webrtc", sessionId: "bad id!" })).toBeNull();
+    expect(normalizeBthPublicBroadcast({ active: false, updatedAt: "2026-11-27T12:00:00Z" })).toEqual({
+      active: false,
+      updatedAt: "2026-11-27T12:00:00Z",
+    });
   });
 });

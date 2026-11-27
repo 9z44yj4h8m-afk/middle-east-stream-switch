@@ -182,3 +182,40 @@ export async function toggleFloatingVideo(video: FloatingVideoEl, doc: Document)
   }
   throw new Error("النافذة الصغيرة غير متاحة في هذا المتصفح.");
 }
+
+export type BthPublicBroadcast =
+  | { active: true; mode: "link"; sourceUrl: string; label: string; startedAt: string }
+  | { active: true; mode: "webrtc"; sessionId: string; source: "screen" | "camera"; label: string; startedAt: string }
+  | { active: false; updatedAt: string };
+
+export function normalizeBthPublicBroadcast(raw: unknown): BthPublicBroadcast | null {
+  if (!raw || typeof raw !== "object") return null;
+  const row = raw as Record<string, unknown>;
+  if (row["active"] !== true) {
+    return { active: false, updatedAt: typeof row["updatedAt"] === "string" ? row["updatedAt"] : "" };
+  }
+  const startedAt = typeof row["startedAt"] === "string" ? row["startedAt"] : "";
+  if (row["mode"] === "link" && typeof row["sourceUrl"] === "string") {
+    const parsed = parseBthStream(row["sourceUrl"], "almoghani.net", true);
+    if (!parsed.ok) return null;
+    return {
+      active: true,
+      mode: "link",
+      sourceUrl: parsed.stream.sourceUrl,
+      label: typeof row["label"] === "string" && row["label"].trim() ? row["label"].trim().slice(0, 40) : parsed.stream.label,
+      startedAt,
+    };
+  }
+  if (row["mode"] === "webrtc" && typeof row["sessionId"] === "string" && /^[a-zA-Z0-9_-]{8,64}$/.test(row["sessionId"])) {
+    const source = row["source"] === "camera" ? "camera" : "screen";
+    return {
+      active: true,
+      mode: "webrtc",
+      sessionId: row["sessionId"],
+      source,
+      label: source === "camera" ? "بث الكاميرا المباشر" : "بث الشاشة المباشر",
+      startedAt,
+    };
+  }
+  return null;
+}
