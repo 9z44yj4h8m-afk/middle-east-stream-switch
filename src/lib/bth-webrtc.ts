@@ -1,8 +1,10 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { countBthPresenceViewers, type BthPresenceRole } from "./bth-stream";
 
 export const BTH_SIGNAL_CHANNEL = "almoghani-bth-live-signal";
 export const BTH_NOTIFY_CHANNEL = "almoghani-bth-public-notify";
+export const BTH_PRESENCE_CHANNEL = "almoghani-bth-live-presence";
 const MAX_PEERS = 12;
 const ICE_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun.l.google.com:19302" },
@@ -267,4 +269,48 @@ export async function notifyBthPublicRefresh(): Promise<void> {
       }
     });
   });
+}
+
+export type BthPresenceHandle = {
+  setRole: (role: BthPresenceRole) => void;
+  stop: () => void;
+};
+
+export function startBthPresence(
+  initialRole: BthPresenceRole,
+  onViewerCountChange: (count: number) => void,
+): BthPresenceHandle {
+  const clientId = `p-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  let closed = false;
+  let subscribed = false;
+  let currentRole: BthPresenceRole = initialRole;
+
+  const ch: RealtimeChannel = supabase
+    .channel(BTH_PRESENCE_CHANNEL, { config: { presence: { key: clientId } } })
+    .on("presence", { event: "sync" }, () => {
+      if (closed) return;
+      onViewerCountChange(countBthPresenceViewers(ch.presenceState()));
+    })
+    .subscribe((status) => {
+      if (status !== "SUBSCRIBED" || closed) return;
+      subscribed = true;
+      void ch.track({ role: currentRole, joinedAt: Date.now() }).catch(() => {});
+    });
+
+  return {
+    setRole: (role) => {
+      if (closed || role === currentRole) return;
+      currentRole = role;
+      if (subscribed) {
+        void ch.track({ role: currentRole, joinedAt: Date.now() }).catch(() => {});
+      }
+    },
+    stop: () => {
+      if (closed) return;
+      closed = true;
+      subscribed = false;
+      void ch.untrack().catch(() => {});
+      void supabase.removeChannel(ch);
+    },
+  };
 }

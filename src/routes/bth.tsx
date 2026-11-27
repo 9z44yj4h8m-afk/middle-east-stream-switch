@@ -3,6 +3,9 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { useServerFn } from "@tanstack/react-start";
 import {
   Camera,
+  Check,
+  Copy,
+  Eye,
   Link2,
   Lock,
   Maximize2,
@@ -14,6 +17,7 @@ import {
   Play,
   Radio,
   RefreshCw,
+  Share2,
   ShieldCheck,
   Square,
   X,
@@ -21,14 +25,30 @@ import {
 import { BthPlayer, type BthPlaybackState, type BthPlayerHandle } from "@/components/bth-player";
 import {
   BTH_PROVIDERS,
+  formatBthViewerCount,
+  getBthShareUrl,
   normalizeBthPublicBroadcast,
   parseBthStream,
   type BthProviderChip,
-  type BthPublicBroadcast,
-  type BthStream,
 } from "@/lib/bth-stream";
 import { checkBthOwner, saveBthPublicBroadcast } from "@/lib/bth-broadcast.functions";
-import { BTH_NOTIFY_CHANNEL, notifyBthPublicRefresh, startBthBroadcaster, startBthViewer } from "@/lib/bth-webrtc";
+import {
+  getBthLiveViewerCount,
+  getBthSession,
+  setBthAudienceLive,
+  setBthCaptureSource,
+  setBthLocalMedia,
+  setBthMicEnabled,
+  setBthMinimized,
+  setBthPageMounted,
+  setBthPublicState,
+  setBthStream,
+  startBthSessionBroadcaster,
+  stopBthSessionBroadcaster,
+  stopBthSessionLocalMedia,
+  useBthSession,
+} from "@/lib/bth-session";
+import { BTH_NOTIFY_CHANNEL, notifyBthPublicRefresh, startBthViewer } from "@/lib/bth-webrtc";
 import { loginOwner } from "@/lib/admin-login.functions";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -58,26 +78,18 @@ const STATUS_COPY: Record<BthPlaybackState, { ar: string; code: string }> = {
 function BroadcastPage() {
   const playerRef = useRef<BthPlayerHandle>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const broadcasterRef = useRef<{ stop: () => void } | null>(null);
   const viewerRef = useRef<{ stop: () => void } | null>(null);
-  const localMediaRef = useRef<MediaStream | null>(null);
-  const isHostingRef = useRef(false);
 
   const checkOwnerFn = useServerFn(checkBthOwner);
   const saveBroadcastFn = useServerFn(saveBthPublicBroadcast);
   const ownerLoginFn = useServerFn(loginOwner);
+  const session = useBthSession();
+  const { stream, localMedia, captureSource, micEnabled, audienceLive, publicState, minimized } = session;
+  const viewerCount = getBthLiveViewerCount(session);
 
   const [input, setInput] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<BthProviderChip["id"]>("youtube");
-  const [stream, setStream] = useState<BthStream | null>(null);
-  const [captureSource, setCaptureSource] = useState<"screen" | "camera">("screen");
-  const [micEnabled, setMicEnabled] = useState(false);
-  const [localMedia, setLocalMedia] = useState<MediaStream | null>(null);
   const [remoteMedia, setRemoteMedia] = useState<MediaStream | null>(null);
-  const [publicState, setPublicState] = useState<BthPublicBroadcast | null>(null);
-  const [audienceLive, setAudienceLive] = useState(false);
-  const [peerCount, setPeerCount] = useState(0);
-  const [minimized, setMinimized] = useState(false);
   const [playbackState, setPlaybackState] = useState<BthPlaybackState>("idle");
   const [muted, setMuted] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -90,6 +102,8 @@ function BroadcastPage() {
   const [authError, setAuthError] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
   const [pendingPublish, setPendingPublish] = useState(false);
+  const [shareUrl, setShareUrl] = useState("https://almoghani.net/bth");
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const activeChip = BTH_PROVIDERS.find((p) => p.id === selectedProvider) ?? BTH_PROVIDERS[0];
   const statusChip = STATUS_COPY[playbackState];
@@ -100,32 +114,33 @@ function BroadcastPage() {
     setRemoteMedia(null);
   }, []);
 
-  const stopLocalMedia = useCallback(() => {
-    broadcasterRef.current?.stop();
-    broadcasterRef.current = null;
-    localMediaRef.current?.getTracks().forEach((t) => t.stop());
-    localMediaRef.current = null;
-    setLocalMedia(null);
-    setPeerCount(0);
-  }, []);
-
   const loadPublicBroadcast = useCallback(async () => {
-    if (isHostingRef.current) return;
+    const current = getBthSession();
+    if (current.audienceLive || current.localMedia) return;
     const { data } = await supabase.from("site_settings").select("value").eq("key", "bth_public_stream").maybeSingle();
     const normalized = normalizeBthPublicBroadcast(data?.value);
-    setPublicState(normalized);
+    setBthPublicState(normalized);
     stopViewer();
     if (!normalized || !normalized.active) return;
     if (normalized.mode === "link") {
       const host = typeof window === "undefined" ? "almoghani.net" : window.location.hostname;
       const parsed = parseBthStream(normalized.sourceUrl, host, true);
       if (parsed.ok) {
-        setStream(parsed.stream);
+        setBthStream(parsed.stream);
         setRefreshKey((k) => k + 1);
+      }
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session) {
+          const check = await checkOwnerFn();
+          if (check.isAdmin) setBthAudienceLive(true);
+        }
+      } catch {
+        /* visitor stays in viewer mode */
       }
       return;
     }
-    setStream(null);
+    setBthStream(null);
     setPlaybackState("loading");
     viewerRef.current = startBthViewer(normalized.sessionId, {
       onStream: (media) => {
@@ -134,6 +149,7 @@ function BroadcastPage() {
       },
       onEnded: () => {
         setRemoteMedia(null);
+        setBthPublicState({ active: false, updatedAt: new Date().toISOString() });
         setPlaybackState("idle");
         setStatusNotice("انتهى البث المباشر من المذيع.");
       },
@@ -143,9 +159,11 @@ function BroadcastPage() {
         setPlaybackState("error");
       },
     });
-  }, [stopViewer]);
+  }, [checkOwnerFn, stopViewer]);
 
   useEffect(() => {
+    setShareUrl(getBthShareUrl(window.location.origin, window.location.hostname));
+    setBthPageMounted(true);
     void loadPublicBroadcast();
     const ch = supabase
       .channel(BTH_NOTIFY_CHANNEL, { config: { broadcast: { self: false } } })
@@ -156,25 +174,52 @@ function BroadcastPage() {
     return () => {
       void supabase.removeChannel(ch);
       stopViewer();
-      stopLocalMedia();
+      setBthPageMounted(false);
     };
-  }, [loadPublicBroadcast, stopViewer, stopLocalMedia]);
+  }, [loadPublicBroadcast, stopViewer]);
 
-  useEffect(() => {
-    if (!audienceLive) return;
-    const onBeforeUnload = (ev: BeforeUnloadEvent) => {
-      ev.preventDefault();
-      ev.returnValue = "";
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [audienceLive]);
+  const copyText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const el = document.createElement("textarea");
+      el.value = text;
+      el.style.position = "fixed";
+      el.style.opacity = "0";
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    }
+  };
+
+  const handleCopyShareLink = async () => {
+    await copyText(shareUrl);
+    setCopiedLink(true);
+    setStatusNotice("تم نسخ رابط البث — أرسله لأصدقائك للمشاهدة مباشرة.");
+    window.setTimeout(() => setCopiedLink(false), 2400);
+  };
+
+  const handleShareLink = async () => {
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: "بث المغني المباشر — ALMOGHANI LIVE",
+          text: "شاهد البث المباشر الآن على المغني لايف",
+          url: shareUrl,
+        });
+        return;
+      } catch (e) {
+        if (e instanceof Error && e.name === "AbortError") return;
+      }
+    }
+    await handleCopyShareLink();
+  };
 
   const startStream = (rawUrl: string, nextMuted: boolean) => {
     stopViewer();
-    stopLocalMedia();
-    isHostingRef.current = false;
-    setAudienceLive(false);
+    stopBthSessionLocalMedia();
+    setBthAudienceLive(false);
     setStatusNotice("");
     const host = typeof window === "undefined" ? "almoghani.net" : window.location.hostname;
     const parsed = parseBthStream(rawUrl, host, nextMuted);
@@ -183,7 +228,7 @@ function BroadcastPage() {
       return;
     }
     setError("");
-    setStream(parsed.stream);
+    setBthStream(parsed.stream);
     if (parsed.stream.provider !== "direct") setSelectedProvider(parsed.stream.provider);
     setRefreshKey((k) => k + 1);
   };
@@ -194,10 +239,9 @@ function BroadcastPage() {
     setStatusNotice("");
     setBusyAction("capture");
     stopViewer();
-    stopLocalMedia();
-    setStream(null);
-    setAudienceLive(false);
-    isHostingRef.current = false;
+    stopBthSessionLocalMedia();
+    setBthStream(null);
+    setBthAudienceLive(false);
     try {
       let media: MediaStream;
       if (captureSource === "screen") {
@@ -229,21 +273,11 @@ function BroadcastPage() {
         }
       }
 
-      const primaryVideo = media.getVideoTracks()[0];
-      if (primaryVideo) {
-        primaryVideo.addEventListener(
-          "ended",
-          () => {
-            if (isHostingRef.current) void handleStopAudience();
-            stopLocalMedia();
-            setPlaybackState("idle");
-          },
-          { once: true },
-        );
-      }
-
-      localMediaRef.current = media;
-      setLocalMedia(media);
+      setBthLocalMedia(media, () => {
+        if (getBthSession().audienceLive) void handleStopAudience();
+        stopBthSessionLocalMedia();
+        setPlaybackState("idle");
+      });
       setStatusNotice("المعاينة جاهزة — اضغط «بدء البث للجمهور» عندما تكون مستعداً.");
     } catch (e) {
       const name = e instanceof Error ? e.name : "";
@@ -261,8 +295,9 @@ function BroadcastPage() {
     setError("");
     setStudioError("");
     setStatusNotice("");
-    const activeMedia = localMediaRef.current;
-    const activeStream = stream;
+    const current = getBthSession();
+    const activeMedia = current.localMedia;
+    const activeStream = current.stream;
     if (!activeMedia && !activeStream) {
       setStudioError("اضغط «بداية البث» لاختيار الشاشة أو الكاميرا، أو شغّل رابط بث بالأسفل أولاً.");
       return;
@@ -273,23 +308,20 @@ function BroadcastPage() {
       if (activeMedia) {
         const sessionId = `bth_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
         const res = await saveBroadcastFn({
-          data: { action: "start_webrtc", sessionId, source: captureSource },
+          data: { action: "start_webrtc", sessionId, source: current.captureSource },
         });
-        broadcasterRef.current?.stop();
-        broadcasterRef.current = startBthBroadcaster(activeMedia, sessionId, setPeerCount);
-        isHostingRef.current = true;
-        setPublicState(res.state);
-        setAudienceLive(true);
-        setStatusNotice("البث مباشر للجمهور الآن — أي زائر يفتح almoghani.net/bth سيشاهد بثك مباشرة.");
+        startBthSessionBroadcaster(activeMedia, sessionId);
+        setBthPublicState(res.state);
+        setBthAudienceLive(true);
+        setStatusNotice("البث مباشر للجمهور الآن — سيبقى شغالاً حتى لو تنقّلت في الموقع، ويمكنك نسخ الرابط وإرساله لأصدقائك.");
       } else if (activeStream) {
         const res = await saveBroadcastFn({
           data: { action: "start_link", sourceUrl: activeStream.sourceUrl },
         });
-        isHostingRef.current = true;
-        setPublicState(res.state);
-        setAudienceLive(true);
+        setBthPublicState(res.state);
+        setBthAudienceLive(true);
         await notifyBthPublicRefresh();
-        setStatusNotice("تم نشر البث للجمهور على صفحة البث.");
+        setStatusNotice("تم نشر البث للجمهور — سيبقى شغالاً حتى لو خرجت من الصفحة أو أغلقت المتصفح.");
       }
     } catch (e) {
       setStudioError(e instanceof Error ? e.message : "تعذر بدء البث للجمهور حالياً.");
@@ -301,7 +333,8 @@ function BroadcastPage() {
   const handleStartAudience = async () => {
     setError("");
     setStudioError("");
-    if (!localMediaRef.current && !stream) {
+    const current = getBthSession();
+    if (!current.localMedia && !current.stream) {
       setStudioError("اضغط «بداية البث» لاختيار الشاشة أو الكاميرا، أو شغّل رابط بث بالأسفل أولاً.");
       return;
     }
@@ -330,13 +363,9 @@ function BroadcastPage() {
   const handleStopAudience = async () => {
     setBusyAction("publish");
     try {
-      broadcasterRef.current?.stop();
-      broadcasterRef.current = null;
-      isHostingRef.current = false;
-      setAudienceLive(false);
-      setPeerCount(0);
+      stopBthSessionBroadcaster();
       const res = await saveBroadcastFn({ data: { action: "stop" } });
-      setPublicState(res.state);
+      setBthPublicState(res.state);
       await notifyBthPublicRefresh();
       setStatusNotice("تم إنهاء البث للجمهور.");
     } catch (e) {
@@ -415,9 +444,9 @@ function BroadcastPage() {
   const handleClear = () => {
     if (audienceLive) void handleStopAudience();
     stopViewer();
-    stopLocalMedia();
+    stopBthSessionLocalMedia();
     setInput("");
-    setStream(null);
+    setBthStream(null);
     setError("");
     setStudioError("");
     setStatusNotice("");
@@ -427,6 +456,7 @@ function BroadcastPage() {
 
   const activeMediaStream = localMedia ?? remoteMedia;
   const isLocalPreview = Boolean(localMedia);
+  const isPublicLive = audienceLive || Boolean(publicState?.active);
   const activeMediaLabel = localMedia
     ? captureSource === "camera"
       ? "الكاميرا"
@@ -448,16 +478,14 @@ function BroadcastPage() {
           : "شاشتي — البث الشخصي";
 
   const broadcastSubtitle = audienceLive
-    ? peerCount > 0
-      ? `بث مباشر متاح للجمهور (${peerCount} متصل)`
-      : "بثك مفتوح الآن على almoghani.net/bth للجمهور"
+    ? `البث مستمر حتى عند التنقل داخل الموقع · ${formatBthViewerCount(viewerCount)}`
     : localMedia
       ? "معاينة خاصة قبل الظهور للجمهور — اضغط «بدء البث للجمهور» للنشر"
       : stream
         ? playbackState === "error"
           ? "تعذر تشغيل الرابط الحالي؛ أعد المحاولة أو استبدل الرابط"
           : publicState?.active && publicState.mode === "link"
-            ? "البث الرئيسي النشط للجمهور"
+            ? `البث الرئيسي النشط للجمهور · ${formatBthViewerCount(viewerCount)}`
             : "رابط نشط لهذه الجلسة فقط"
         : "اضغط «بداية البث» أو الصق رابط البث بالأسفل للبدء";
 
@@ -482,6 +510,10 @@ function BroadcastPage() {
               <span>{statusChip.ar}</span>
               <small dir="ltr">{statusChip.code}</small>
             </span>
+            <span className="bth-viewer-chip" data-live={isPublicLive ? "true" : "false"} aria-live="polite" title="عدد المشاهدين الآن">
+              <Eye className="h-3.5 w-3.5" />
+              <span>{formatBthViewerCount(viewerCount)}</span>
+            </span>
           </div>
 
           <nav className="bth-shortcuts" aria-label="اختصارات البث">
@@ -504,9 +536,10 @@ function BroadcastPage() {
           mediaStream={activeMediaStream}
           mediaLabel={activeMediaLabel}
           isLocalPreview={isLocalPreview}
-          isAudienceLive={audienceLive || Boolean(remoteMedia)}
+          isAudienceLive={isPublicLive}
+          viewerCount={viewerCount}
           minimized={minimized}
-          onMinimizedChange={setMinimized}
+          onMinimizedChange={setBthMinimized}
           refreshKey={refreshKey}
           muted={muted}
           onToggleMute={handleToggleMute}
@@ -522,7 +555,7 @@ function BroadcastPage() {
               data-active={captureSource === "screen" ? "true" : "false"}
               aria-pressed={captureSource === "screen"}
               disabled={busyAction !== null || audienceLive}
-              onClick={() => setCaptureSource("screen")}
+              onClick={() => setBthCaptureSource("screen")}
             >
               <MonitorUp className="h-3.5 w-3.5" />
               <span>الشاشة</span>
@@ -533,7 +566,7 @@ function BroadcastPage() {
               data-active={captureSource === "camera" ? "true" : "false"}
               aria-pressed={captureSource === "camera"}
               disabled={busyAction !== null || audienceLive}
-              onClick={() => setCaptureSource("camera")}
+              onClick={() => setBthCaptureSource("camera")}
             >
               <Camera className="h-3.5 w-3.5" />
               <span>الكاميرا</span>
@@ -544,7 +577,7 @@ function BroadcastPage() {
               data-active={micEnabled ? "true" : "false"}
               aria-pressed={micEnabled}
               disabled={busyAction !== null || audienceLive}
-              onClick={() => setMicEnabled((v) => !v)}
+              onClick={() => setBthMicEnabled(!micEnabled)}
             >
               {micEnabled ? <Mic className="h-3.5 w-3.5" /> : <MicOff className="h-3.5 w-3.5" />}
               <span>{micEnabled ? "المايك مفعّل" : "المايك مغلق"}</span>
@@ -592,6 +625,36 @@ function BroadcastPage() {
               {minimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
               <span>{minimized ? "تكبير الشاشة" : "تصغير الشاشة"}</span>
             </button>
+          </div>
+
+          <div className="bth-share-bar" aria-label="رابط مشاركة البث للأصدقاء">
+            <div className="bth-share-link-box">
+              <span className="bth-share-label">رابط البث للأصدقاء</span>
+              <input
+                type="text"
+                readOnly
+                dir="ltr"
+                value={shareUrl}
+                aria-label="رابط البث المباشر"
+                onFocus={(e) => e.currentTarget.select()}
+                className="bth-share-input"
+              />
+            </div>
+            <div className="bth-share-actions">
+              <button
+                type="button"
+                className="bth-share-btn bth-share-copy"
+                data-copied={copiedLink ? "true" : "false"}
+                onClick={() => void handleCopyShareLink()}
+              >
+                {copiedLink ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                <span>{copiedLink ? "تم النسخ" : "نسخ الرابط"}</span>
+              </button>
+              <button type="button" className="bth-share-btn" onClick={() => void handleShareLink()}>
+                <Share2 className="h-4 w-4" />
+                <span>مشاركة</span>
+              </button>
+            </div>
           </div>
 
           {statusNotice && (

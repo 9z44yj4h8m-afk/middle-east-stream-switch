@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { normalizeBthPublicBroadcast, parseBthStream } from "./bth-stream";
+import {
+  countBthPresenceViewers,
+  formatBthViewerCount,
+  getBthShareUrl,
+  normalizeBthPublicBroadcast,
+  parseBthStream,
+} from "./bth-stream";
 
 describe("parseBthStream", () => {
   it("parses YouTube watch, short, and live links using youtube.com/embed", () => {
@@ -80,5 +86,28 @@ describe("parseBthStream", () => {
       active: false,
       updatedAt: "2026-11-27T12:00:00Z",
     });
+  });
+
+  it("builds canonical share URLs for friends", () => {
+    expect(getBthShareUrl("https://www.almoghani.net", "www.almoghani.net")).toBe("https://almoghani.net/bth");
+    expect(getBthShareUrl("https://almoghani.net", "almoghani.net")).toBe("https://almoghani.net/bth");
+    expect(getBthShareUrl("http://localhost:8080/", "localhost")).toBe("http://localhost:8080/bth");
+    expect(getBthShareUrl()).toBe("https://almoghani.net/bth");
+  });
+
+  it("counts only connected viewers from realtime presence and formats Arabic labels", () => {
+    const state = {
+      host1: [{ role: "host" }],
+      viewer1: [{ role: "viewer" }, { role: "viewer" }],
+      viewer2: [{ role: "viewer" }],
+      idle1: [{ role: "idle" }],
+    };
+    expect(countBthPresenceViewers(state)).toBe(2);
+    expect(countBthPresenceViewers({})).toBe(0);
+    expect(formatBthViewerCount(0)).toBe("0 مشاهد");
+    expect(formatBthViewerCount(1)).toBe("1 مشاهد");
+    expect(formatBthViewerCount(2)).toBe("2 مشاهدين");
+    expect(formatBthViewerCount(5)).toBe("5 مشاهدين");
+    expect(formatBthViewerCount(12)).toBe("12 مشاهد");
   });
 });

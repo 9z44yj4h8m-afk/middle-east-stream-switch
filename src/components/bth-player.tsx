@@ -1,6 +1,7 @@
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
-import { AlertTriangle, Maximize, Maximize2, Minimize2, PictureInPicture2, Radio, RefreshCw, Volume2, VolumeX } from "lucide-react";
+import { AlertTriangle, Eye, Maximize, Maximize2, Minimize2, PictureInPicture2, Radio, RefreshCw, Volume2, VolumeX } from "lucide-react";
 import {
+  formatBthViewerCount,
   supportsFloatingVideo,
   toggleFloatingVideo,
   type BthStream,
@@ -20,6 +21,7 @@ type Props = {
   mediaLabel?: string;
   isLocalPreview?: boolean;
   isAudienceLive?: boolean;
+  viewerCount?: number;
   minimized: boolean;
   onMinimizedChange: (next: boolean) => void;
   refreshKey: number;
@@ -36,6 +38,7 @@ export function BthPlayer({
   mediaLabel,
   isLocalPreview = false,
   isAudienceLive = false,
+  viewerCount = 0,
   minimized,
   onMinimizedChange,
   refreshKey,
@@ -278,9 +281,17 @@ export function BthPlayer({
         )}
 
         {hasActiveMedia && (isLocalPreview || isAudienceLive) && (
-          <span className="bth-stage-badge" data-live={isAudienceLive ? "true" : "false"}>
-            {isAudienceLive ? "مباشر للجمهور" : "معاينة الشاشة — خاص بك"}
-          </span>
+          <div className="bth-stage-meta">
+            <span className="bth-stage-badge" data-live={isAudienceLive ? "true" : "false"}>
+              {isAudienceLive ? "مباشر للجمهور" : "معاينة الشاشة — خاص بك"}
+            </span>
+            {isAudienceLive && (
+              <span className="bth-stage-viewers" aria-label={`عدد المشاهدين ${viewerCount}`}>
+                <Eye className="h-3.5 w-3.5" />
+                <span>{formatBthViewerCount(viewerCount)}</span>
+              </span>
+            )}
+          </div>
         )}
 
         {status === "error" && errorMsg && (

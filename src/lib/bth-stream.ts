@@ -219,3 +219,35 @@ export function normalizeBthPublicBroadcast(raw: unknown): BthPublicBroadcast | 
   }
   return null;
 }
+
+export function getBthShareUrl(origin?: string, hostname?: string): string {
+  const host = (hostname ?? "").toLowerCase();
+  if (host === "almoghani.net" || host === "www.almoghani.net") {
+    return "https://almoghani.net/bth";
+  }
+  if (origin && /^https?:\/\//i.test(origin)) {
+    return `${origin.replace(/\/+$/, "")}/bth`;
+  }
+  return "https://almoghani.net/bth";
+}
+
+export type BthPresenceRole = "host" | "viewer" | "idle";
+
+export function countBthPresenceViewers(state: Record<string, unknown>): number {
+  let count = 0;
+  for (const entries of Object.values(state)) {
+    if (!Array.isArray(entries)) continue;
+    const isViewer = entries.some(
+      (entry) => Boolean(entry) && typeof entry === "object" && (entry as Record<string, unknown>)["role"] === "viewer",
+    );
+    if (isViewer) count += 1;
+  }
+  return count;
+}
+
+export function formatBthViewerCount(count: number): string {
+  const safe = Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
+  if (safe === 2) return "2 مشاهدين";
+  if (safe >= 3 && safe <= 10) return `${safe} مشاهدين`;
+  return `${safe} مشاهد`;
+}
